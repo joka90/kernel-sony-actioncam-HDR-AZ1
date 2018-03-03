@@ -1,0 +1,11 @@
+#
+# fusb_otg USB Controller Driver
+#
+
+comment "fusb_otg - USB Controller Driver"
+
+config USB_FUSB_OTG
+	bool 'fusb_otg USB OTG controller support'
+	default y
+	---help---
+	  non

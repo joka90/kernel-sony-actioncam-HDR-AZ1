@@ -1,0 +1,10 @@
+comment "SNSC Configurations"
+	depends on SNSC
+
+config SNSC_IPV6_UPDATE_ADDR_LABEL_RFC3484
+    bool "Updated policy table for RFC3484"
+    depends on SNSC && IPV6
+    default y
+    help
+    Updated IPV6 address label for IPV6 source address selection
+    table (RFC3484)

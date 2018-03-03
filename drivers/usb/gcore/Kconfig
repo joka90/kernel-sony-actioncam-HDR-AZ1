@@ -1,0 +1,30 @@
+comment "USB OTG/Gadget Subsystem"
+
+config USB_EVENT
+	tristate 'USB Event'
+	default n
+
+config USB_EVENT_LOGGING
+	int  'Logging Level (0: None / 1: Debug / 2: Verbose )'
+	depends on USB_EVENT
+	default "0"
+
+config USB_OTG_CORE
+	tristate 'USB OTG Core'
+	depends on USB_EVENT
+	default y
+
+config USB_OTG_CORE_LOGGING
+	int  'Logging Level (0: None / 1: Debug / 2: Verbose )'
+	depends on USB_OTG_CORE
+	default "0"
+
+config USB_GADGET_CORE
+	tristate 'USB Gadget Core'
+	depends on USB_EVENT
+	default y
+
+config USB_GADGET_CORE_LOGGING
+	int  'Logging Level (0: None / 1: Debug / 2: Verbose )'
+	depends on USB_GADGET_CORE
+	default "0"

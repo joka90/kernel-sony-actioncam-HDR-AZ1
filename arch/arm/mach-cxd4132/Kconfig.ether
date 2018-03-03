@@ -1,0 +1,3 @@
+config CXD41XX_SMC911X_INT
+	int "SMC911X: IRQ#"
+	default 3

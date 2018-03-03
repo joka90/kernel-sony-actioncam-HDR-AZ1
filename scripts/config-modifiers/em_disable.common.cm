@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+scripts/setconfig.py -f - <<_EOF_
+CONFIG_EXCEPTION_MONITOR=n
+_EOF_

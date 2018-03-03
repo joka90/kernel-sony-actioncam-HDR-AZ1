@@ -1,0 +1,16 @@
+choice
+	prompt "UART Number for DEBUG_LL console"
+	default CXD4132_DEBUG_UART0
+config CXD4132_DEBUG_UART0
+	bool "UART0"
+config CXD4132_DEBUG_UART1
+	bool "UART1"
+config CXD4132_DEBUG_UART2
+	bool "UART2"
+endchoice
+
+config CXD4132_DEBUG_UART_NO
+	int
+	default 0 if CXD4132_DEBUG_UART0
+	default 1 if CXD4132_DEBUG_UART1
+	default 2 if CXD4132_DEBUG_UART2

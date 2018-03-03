@@ -1,0 +1,11 @@
+comment "USB Host Test Mode Drivers"
+
+config USB_HOST_TEST_MODE
+	tristate 'USB Host Test Mode Support'
+	depends on USB
+	default m
+
+config USB_HOST_TEST_MODE_LOGGING
+	int  'Logging Level (0: None / 1: Debug / 2: Verbose )'
+	depends on USB_HOST_TEST_MODE
+	default "0"

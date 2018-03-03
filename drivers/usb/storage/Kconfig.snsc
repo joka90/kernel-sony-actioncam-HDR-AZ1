@@ -1,0 +1,11 @@
+comment "SNSC related options"
+	depends on SNSC
+
+config SNSC_USB_STORAGE_USE_GFP_NOWAIT_OR_ATOMIC
+	bool "Use GFP_NOWAIT or GFP_ATOMIC in a USB storage driver"
+	depends on SNSC
+	depends on USB_STORAGE
+	help
+	  To avoid a memory starvation with swap areas on a USB HDD,
+	  use GFP_NOWAIT or GFP_ATOMIC instead of GFP_NOIO
+	  in the USB storage driver.

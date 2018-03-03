@@ -1,0 +1,632 @@
+
+Explanation of config option to simplify the scheduler
+
+April 16, 2012
+commit f31038c32f1708015c8c738aee3188356e2751cb
+
+modified in linux-3.0.y-BRANCH_SS-RT
+
+
+The goal of the scheduler simplification config option is to reduce the
+latency and overhead of the real timer scheduler and the fair scheduler.
+
+The simplification are controlled by the config options below:
+CONFIG_EJ_SS_O1_LOAD_BALANCE
+CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+CONFIG_EJ_SS_REDUCE_OS_TIMER_LOAD
+CONFIG_EJ_SS_MISC
+
+================================================================================
+Terminology
+
+A "fair task" is a task whose scheduling policy is one of:
+
+   SCHED_OTHER
+   SCHED_BATCH
+   SCHED_IDLE
+
+A "real-time task" or "RT task" is a task whose scheduling policy is one of:
+
+   SCHED_FIFO
+   SCHED_RR
+
+The "fair scheduler" is the portion of the scheduler that is controlling
+fair tasks.  It is implemented mostly in kernel/sched_fair.c amd partly in
+kernel/sched.c.
+
+The "real-time scheduler" or "RT scheduler" is the portion of the scheduler
+that is controlling real-time tasks.  It is implemented mostly in
+kernel/sched_rt.c and partly in kernel/sched.c.
+
+The "load" of a group of tasks is the number of tasks in the group, weighted
+by the priority of each of the tasks.
+
+
+================================================================================
+
+Discription for each config option
+-----------------------------
+
+
+@CONFIG_EJ_SS_O1_LOAD_BALANCE
+-------------------------------
+  * This is part of Simplify Scheduler feature for CFS.
+  * Just try to move tasks from the busiest CFS run queue one by one no matter how
+    many tasks has actually being moved. The original implementation is continuously
+    trying to move until the maximum load being moved or none task left on 
+    busiest run queue.
+  * Do more properly and accurate IRQ disable/enable in order to let system
+    have more chance to respond IRQ. This means only disable IRQ at the moment
+    that really doing action which can not be interrupted, and enable it at 
+    once the non-interruptable operation completes.
+ 
+
+@CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+-------------------------------
+  * This is part of Simplify Scheduler feature.
+  * Refine CPU load calculations: 
+     1. For non-RT tasks load balancing, CPU Load is defined as 
+        [execution time of RT tasks in last jiffies]. 
+     2. For RT tasks load balancing, CPU Load is defined as [number of RT tasks]. 
+
+--- The measurement of busyness of cpus for the purpose of load balancing
+    of fair tasks is more simplistic.  The priority of tasks is not used to
+    weight the load imposed by tasks.  The busyness is a measure of how much
+    cpu time was available for non-real-time tasks in the previous jiffy.
+    The amount of cpu used by real-time tasks is exagerated by 25%.  The
+    exact formula is:
+
+      tsk_power = left_power / number of fair tasks
+
+      where
+
+         "left_power" of a cpu is:
+            duration of jiffy - (1.25 * RT task execution time in last jiffy)
+
+         "RT task execution time in last jiffy" is actually an array of
+         possible values, rq->rt.load_per_jiffy[].
+
+         Each time update_cpu_load() is called, the array is updated with the
+         current value of new_load, which is rq->rt.this_jiffy_runtime:
+
+            load_per_jiffy[0] =                            new_load
+            load_per_jiffy[1] = ( 1 * load_per_jiffy[1]) + new_load) /  2
+            load_per_jiffy[2] = ( 3 * load_per_jiffy[2]) + new_load) /  4
+            load_per_jiffy[3] = ( 7 * load_per_jiffy[3]) + new_load) /  8
+            load_per_jiffy[4] = (15 * load_per_jiffy[4]) + new_load) / 16
+
+
+         The element of load_per_jiffy[] to use is based on
+         this_rq->idle_at_tick.
+
+         If the cpu was idle at the last tick, then the array index is
+         sd->idle_idx, otherwise it is sd->busy_idx.  These are initialized
+         to the values in SD_CPU_INIT from include/linux/topology.h:
+
+            .busy_idx = 2
+            .idle_idx = 1
+
+         and can be modified at run time via:
+
+            /proc/sys/kernel/sched_domain/cpuX/domainX/busy_idx
+            /proc/sys/kernel/sched_domain/cpuX/domainX/idle_idx
+
+            for example:
+
+               /proc/sys/kernel/sched_domain/cpu0/domain0/busy_idx
+               /proc/sys/kernel/sched_domain/cpu0/domain0/idle_idx
+
+
+--- Each occurance of fair scheduler load balancing is constrained to stop
+    after a certain amount of work is completed.  The amount of work is
+    defined as the number of tasks moved instead of the sum of the load of
+    the tasks moved.  If the current cpu is not the busiest cpu, then the
+    tasks are pulled to the current cpu.  The formula to calculate the maximum
+    amount of work to complete is:
+
+                            ( b_lp * ( b_nr + t_nr ) )
+      nr_to_move  =  b_nr - ( ---------------------- )
+                            (      b_lp + t_lp       )
+
+      where:
+
+         b_lp is the "left_power" of the busiest cpu
+         b_nr is the number of fair tasks on the busiest cpu
+
+         t_lp is the "left_power" of this cpu
+         t_nr is the number of fair tasks on this cpu
+
+         "left_power" of a cpu is:
+            duration of jiffy - (1.25 * RT task execution time in last jiffy)
+
+         "RT task execution time in last jiffy" is actually an array of
+         possible values, rq->rt.load_per_jiffy[].  (See earlier description
+         for more details.)
+
+--- If (duration of jiffy - (1.25 * RT task execution time in last jiffy)) <= 0
+    for the current processor then load balancing will not attempt to pull any
+    tasks to the current processor.
+
+--- sched_exec() and sched_fork() choose the target cpu by calling
+    sched_balance_self() which calls find_idlest_cpu().  find_idlest_cpu()
+    uses the same data and calculations as the load balancing code, but always
+    uses rq->rt.load_per_jiffy[1] as "RT task execution time in last jiffy".
+
+--- try_to_wake_up() of a fair task chooses the target cpu by calling
+    select_task_rq_fair() which calls find_idlest_cpu().  find_idlest_cpu()
+    uses the same data and calculations as the load balancing code, but always
+    uses rq->rt.load_per_jiffy[1] as "RT task execution time in last jiffy".
+
+--- In sched_slice(), the slice is not adjusted for load weight (nice level).
+    The impact on callers of sched_slice() is:
+
+      check_preempt_tick() will not adjust the ideal_runtime of curr when
+      deciding whether to preempt curr.
+
+      place_entity() will not adjust the slice added to the vruntime of a
+      new task (initial == 1).
+
+
+--- calc_delta_fair() does not scale delta by priority (since load weight
+    (nice level) is not being used).
+
+      wakeup_gran() does not scale the wakeup granularity by priority since
+      calc_delta_fair() does not scale delta by priority.
+
+      The result of wakeup_gran() is used to determine whether to preempt the
+      currently running task when a new fair task is woken, so the priorities
+      of curr and the woken task will not modify the wakeup granularity.
+      (The wakeup granularity defaults to
+      /proc/sys/kernel/sched_wakeup_granularity_ns, but can be reduced by
+      adaptive_gran().)
+
+--- __update_curr() will update curr->vruntime only when
+
+      curr->delta_exec > sysctl_sched_min_granularity
+
+    instead of everytime it is called.
+
+    The value added to curr->vruntime is
+
+       (delta_exec * (fair_nr_all / NR_CPUS)) + us2ns( nice value )
+
+    instead of
+
+       a priority weighted delta execution time.
+
+    cfs_rq->min_vruntime is not moved forward.
+
+
+
+
+@CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+-------------------------------
+  * This is part of Simplify Scheduler feature.
+  * For CFS, reduce the migration via 2 ways below:
+     1. Do not launch active load balance(in load_balance())
+     2. Do not load balance if the current CPU is idle (idle_balance()), Instead
+        set this_rq->next_balance = next_balance so that balancing will occur by
+        calling run_rebalance_domains()
+    As the result load balance is only executed from SCHED_SOFTIRQ
+    (trigger_load_balance() in time tick)
+
+  * For RT, reduce the migration via 'do not push/pull RT tasks' under the
+    occasions below:
+     1. A task is switched to/from RT (switched_to_rt()/switched_from_rt())
+     2. RT task priority is changed. (prio_changed_rt())
+     3. Before and after schedule next task.
+        (pre_schedule_rt()/post_schedule_rt() in __schedule())
+     4. After an RT task is woken up (task_woken_rt()) 
+
+
+
+@CONFIG_EJ_SS_REDUCE_OS_TIMER_LOAD
+-------------------------------
+  * This is part of Simplify Scheduler feature.
+  * Only do task_tick() for rt task in hardirq context, donot call
+    task_tick() for non-rt task in time tick.
+  * Purpose of task_tick are:
+    1. update_curr()
+    2. update_entity_shares_tick()
+    3. check_preempt_tick()
+    Donot call task_tick for non-rt task. Because:
+    task_tick() only performed in TIMER_SOFTIRQ, and ksoftirqd is RT task,
+    so not needed to check preemptiablity for non-rt task here.
+    what's more, when ksoftirqd grab CPU, original non-rt task will be
+    enqueued to rb tree(if still in RUNNING state), above functions
+    will beinvoked here(dequeue_task).
+  * That can speed up hardirq handling.
+
+
+
+@CONFIG_EJ_SS_MISC
+-------------------------------
+  * This is part of Simplify Scheduler feature.
+  * Main change is donot check whether all tasks are in fair class in
+    pick_next_task(), since we only care rt task can be selected as soon as
+    possible.
+
+
+
+
+Real-Time Group Scheduling
+--------------------------
+
+
+--- Real-Time group scheduling is disabled.  (See
+    Documentation/scheduler/sched-rt-group.txt for a description of group
+    scheduling.)
+
+
+--- The following control files do not exist:
+
+      /proc/sys/kernel/sched_rt_period_us
+      /proc/sys/kernel/sched_rt_runtime_us
+
+
+--- Removed def_rt_bandwidth.rt_runtime_lock, and thus the cross-cpu
+    contention for the lock.
+
+
+--- The timer def_rt_bandwidth->rt_period_timer is initialized, and the timer
+    function sched_rt_period_timer is invoked once.  After this single timer
+    expiration it is not re-enabled.  The initialization could be removed with
+    some ugly #ifdef's to prevent compile warnings.
+
+
+Miscellaneous
+-------------
+
+
+--- Removed statistic rt.rt_nr_uninterruptible and this it is not reported in
+    /proc/sched_debug
+
+--- Various scheduler statistics are not maintained.
+
+
+
+
+================================================================================
+Group Scheduling
+
+   The 5 config options can not be selected if any of the following
+   config options are selected:
+
+      CONFIG_GROUP_SCHED
+      CONFIG_RT_GROUP_SCHED
+      CONFIG_FAIR_GROUP_SCHED
+
+   This removes most of the group scheduler overhead and latency.
+
+   Even with all of those config options disabled, the scheduler default is
+   to throttle real-time tasks to 95% of the cpu (this is described in
+   Documentation/scheduler/sched-rt-group.txt).  Even if RT throttling is
+   set to unlimited (echo -1 > /proc/sys/kernel/sched_rt_runtime_us), extra
+   overhead normally still exists.
+
+
+================================================================================
+Modified files
+
+kernel/sched.c
+kernel/sched_debug.c
+kernel/sched_fair.c
+kernel/sched_rt.c
+kernel/sysctl.c
+include/linux/sched.h
+
+
+================================================================================
+In the following lists of functions, the functions are ordered in the same
+order that they occur in the source files.
+
+
+================================================================================
+Inline functions changed to have an empty body of "{}"
+
+   rt_set_overload()
+   rt_clear_overload()
+   inc_rt_migration()
+   dec_rt_migration()
+   enqueue_pushable_task()
+   dequeue_pushable_task()
+   init_sched_rt_class()
+   set_load_weight()
+      nice values are ignored
+   sched_exec()
+
+
+================================================================================
+Functions changed that are not easily classified as simplified or made
+more complicated.
+
+   set_cpus_allowed_rt()
+      Do not update pushable task queue.
+      Do not call update_rt_migration(), which manages rt_rq->overloaded.
+
+   prio_changed_rt()
+      Do not pull real-time tasks.
+
+   update_cpu_load()
+      Use
+         rq->rt.load_per_jiffy[] and rq->rt.this_jiffy_runtime
+      instead of
+         rq->cpu_load[]          and rq->load.weight
+      (rq->rt.this_jiffy_runtime is updated in put_prev_task_rt())
+      Do not call calc_load_account_active()
+
+   find_idlest_cpu()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Return cpu with the lowest load (weighted by nice value).
+         this_cpu is chosen in case of a tie of load.
+      #ifndef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         tsk_power of a cpu is:
+            (time unused by RT tasks in the last jiffy) / number of fair tasks
+         Return cpu with the largest tsk_power, (cpu must be in
+            p->cpus_allowed).
+         this_cpu is chosen in case of a tie of tsk_power.
+
+   select_task_rq_fair()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Ignore parameter "flag".
+         Ignore sched domains.
+         Function becomes:
+            return find_idlest_cpu(this_cpu, current);
+
+   try_to_wake_up()
+      Do not search for another cpu if p->rt.nr_cpus_allowed == 1
+
+   load_balance_fair()
+      #ifdef CONFIG_EJ_SS_O1_LOAD_BALANCE
+         Limit movement of tasks based on number of tasks moved instead of
+         load of tasks moved:
+            Input max_nr_move instead of max_load_move.
+            Return nr_moved instead of load_moved.
+         Do not use the weight of an individual task to determine whether to
+            pull it.
+         Ignore sysctl_sched_nr_migrate limit on number of tasks to move
+            during a balance.
+
+
+===============================================================================
+Functions simplified
+
+   sched_rt_runtime_exceeded()
+      #ifdef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         return 0
+
+   inc_rt_tasks()
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         inc_rt_prio()
+         inc_rt_migration()
+         inc_rt_group()
+            start_rt_bandwidth()
+               // code to handle bandwidth limits on RT tasks.  This is
+               // related to CONFIG_RT_GROUP_SCHED
+
+   dec_rt_tasks()
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         dec_rt_prio()
+         dec_rt_migration()
+         dec_rt_group()
+
+   enqueue_task_rt()
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         decr_rt_nr_uninterruptible()
+         inc_cpu_load()
+
+   dequeue_task_rt()
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         incr_rt_nr_uninterruptible()
+         dec_cpu_load()
+
+   select_task_rq_rt()
+      Lower cost calculation:
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         If task policy is not SCHED_FIFO or SCHED_RR, leave task on its cpu
+         else put task on cpu with lowest rq->rt.load_per_jiffy[0]
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+            If current task is about to sleep, select this cpu
+         else if task's cpu is not overloaded, leave task on that cpu
+         else if current task is an RT task, put task on cpu from
+         find_lowest_rq().
+         else, leave task on its cpu.
+
+   rq_online_rt()
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+          if (rq->rt.overloaded)
+            rt_set_overload(rq);
+          cpupri_set(&rq->rd->cpupri, rq->cpu, rq->rt.highest_prio.curr);
+
+   rq_offline_rt()
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+          if (rq->rt.overloaded)
+            rt_clear_overload(rq);
+          cpupri_set(&rq->rd->cpupri, rq->cpu, CPUPRI_INVALID);
+
+   switched_to_rt()
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         if (rq->rt.overloaded && push_rt_task(rq) && rq != task_rq(p))
+            check_resched = 0;
+
+   find_sd_busiest_rq()
+      No attempt is made to maximize power savings that is requested by
+      CONFIG_SCHED_MC or CONFIG_SCHED_SMT.
+
+      Ignores sched groups and sched domains.
+
+      Sets *imbalanced = nr_to_move instead of load (weight) to move.
+      (This will be used as input to load_balance_fair(), which is modified
+      to use input of max_nr_move instead of max_load_move.)
+
+      Busiest cpu has smallest:
+         (amount of cpu not used by RT tasks) / number of cfs tasks running
+
+   load_balance()
+      #ifdef CONFIG_EJ_SS_O1_LOAD_BALANCE
+         Do not lock the run queues around move_tasks().  The queues will
+         instead be locked in load_balance_fair(), which is called by
+         move_tasks().
+
+      #ifndef CONFIG_EJ_SS_REDUCE_MIGRATION_FREQ
+         if (active_balance)
+            wake_up_process(busiest->migration_thread);
+
+   idle_balance()
+      Do not directly pull tasks from other cpus.
+      Set rq->next_balance to jiffies so that run_rebalance_domains() will
+      be called in scheduler_tick_in_timer() or by raising SCHED_SOFTIRQ.
+
+   active_load_balance()
+      Do not do anything (do not push running tasks off the busiest CPU
+      onto idle CPUs).
+
+   scheduler_tick()
+      #ifdef CONFIG_EJ_SS_REDUCE_OS_TIMER_LOAD
+
+      Some work is deferred to scheduler_tick_in_timer() if curr is a fair
+      task (this work is not done at all if curr is an RT task or the idle
+      task):
+         update_rq_clock()
+         update_cpu_load()
+      scheduler_tick_in_timer() will be called by run_timer_softirq().  If curr
+         is no longer the highest priority fair task when
+         scheduler_tick_in_timer() executes then the fair task tick,
+         task_tick_fair(), will be lost.
+
+      if curr is a RT task
+         if current sched policy is SCHED_RR then try to lock rq
+         if attempt to lock rq succeeded
+            curr->sched_class->task_tick()
+            // This means that RT task tick, task_tick_rt(), might not occur
+      else if curr is not the idle task
+         save curr in per cpu variable "currs", to be used by
+            scheduler_tick_in_timer()
+         rq->idle_at_tick = 0
+      else
+         rq->idle_at_tick = 1
+
+   pick_next_task()
+      remove a fair sched class optimization
+
+   calc_delta_fair()
+      #ifndef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Do not scale delta by the priority (since load weights are not
+         being used).
+
+   sched_slice()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Do not adjust slice for nice level and cfs_rq->load
+
+   __update_curr()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Update curr->vruntime only when
+            curr->delta_exec > sysctl_sched_min_granularity
+         curr->vruntime is increased by:
+            delta_exec * (fair_nr_all / NR_CPUS)
+            us2ns( nice value )
+
+   update_stats_wait_start()
+      do nothing
+
+   account_entity_enqueue()
+      #ifndef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         cfs->rq->rq->load   += se->load
+         cfs_rq->task_weight += se->load
+         add task to se->group_node
+
+   account_entity_dequeue()
+      #ifndef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         cfs->rq->rq->load   -= se->load
+         cfs_rq->task_weight -= se->load
+         remove task from se->group_node
+
+   enqueue_entity()
+      #ifndef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Remove minor amount of statistics gathering.
+
+   dequeue_entity()
+      #ifndef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         update some stats
+
+  
+dequeue_task_fair()
+   for_each_sched_entity() is
+      for (; se; se = NULL)
+   so code in #ifndef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+      is not needed
+      This only saves a few instructions.
+
+select_task_rq_fair()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Check for imbalance
+         possibly do load balancing.
+         return either current cpu or previous cpu
+      #else
+         find_idlest_cpu(task_cpu(p))
+
+
+================================================================================
+Functions with added complexity
+
+   pick_next_task_rt()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         if (!rq->rt.rt_exec_start)
+            rq->rt.rt_exec_start = rq->clock;
+
+   put_prev_task_rt()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         if (rq->rt.rt_exec_start) {
+            delta = rq->clock - rq->rt.rt_exec_start;
+            rq->rt.rt_exec_start = 0;
+            rq->rt.this_jiffy_runtime += delta;
+
+   wake_up_new_task()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         fair_nr_all++
+
+   finish_task_switch()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         fair_nr_all--
+
+   __sched_setscheduler()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+          if changing sched class
+            fair_nr_all-- or fair_nr_all++
+
+   __enqueue_entity()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         clamp se->vruntime to range of
+            rq_of(cfs_rq)->clock - ms2ns(100)
+            rq_of(cfs_rq)->clock + ms2ns(100)
+
+   entity_tick()
+      #ifdef CONFIG_EJ_SS_REFINE_CPU_LOAD_CALC
+         Do not check whether curr should be preempted if curr is not the
+         current fair class task.
+
+         Get here via:
+            scheduler_tick_in_timer()
+               if (task_of(se) == curr)
+                  fair_sched_class.task_tick(this_rq, curr, 0)
+                  task_tick_fair[rq, curr, queued]
+                     se = &curr->se;
+                     cfs_rq = cfs_rq_of(se);
+                     entity_tick(cfs_rq, se, queued)
+                     entity_tick[cfs_rq, curr, queued]
+                        if (rq_of(cfs_rq)->curr == task_of(curr))
+         (Other possible way to get here is from hrtick())
+
+
+================================================================================
+New functions
+
+   cpu_left_power()
+      Time unused by RT tasks in the last jiffy.  "Time used by RT tasks" is
+         actually multiplied by 1.25 to give RT tasks more impact.
+
+   per_tsk_power()
+      Divide power by number of fair tasks running.
+

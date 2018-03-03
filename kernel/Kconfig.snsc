@@ -1,0 +1,269 @@
+#
+# SNSC related configurations
+#
+
+config SNSC_SET_THREAD_PRIORITY
+	bool
+	depends on SNSC
+	default n
+
+config SNSC_MIGRATION_DISABLE_ENABLE_INLINE
+ 	bool "migration_enable() and migration_disable() as inline function"
+ 	depends on SNSC
+ 	default n
+
+config SNSC_REPLACE_MIGRATION_DISABLE_WITH_MIGRATE_DISABLE
+ 	bool "replace migration_enable() and migration_disable() with migrate_enable() and migrate_disable()"
+ 	depends on SNSC
+ 	default y
+
+config SNSC_SKIP_SET_CPUS_ALLOWED_IN_PREVENT_MIGRATION
+	bool "skip set_cpus_allowed in prevent migration code"
+	depends on SNSC
+	depends on !SNSC_MIGRATION_DISABLE_ENABLE_INLINE
+	default n
+
+config SNSC_PRINTK_CUSTOM_LOG_DRIVER
+       bool "Support for printk log driver"
+       depends on SNSC
+       default n
+
+config SNSC_POSIX_CLOCK_SNSC_RAW_CLOCK
+	bool "POSIX clock support for snsc_raw_clock()"
+	depends on SNSC
+	default n
+	help
+	  This option enables special POSIX clock to be able to get a value
+	  of snsc_raw_clock() from user space by clock_gettime() with special
+	  clock ID (CLOCK_SNSC_RAW_CLOCK).
+	  Note: CLOCK_SNSC_RAW_CLOCK is non-compliant with POSIX specification.
+
+config EJ_TASK_QUEUE_TRYLOCK
+        bool  'task runqueue lock use trylock.'
+        depends on SNSC
+        default n
+        help
+          To decrease irq save duration in sched_setscheduler(),
+          use while loop and trylock.
+
+config EJ_SEQ_RQ_LOCK
+        bool  'use sequential runqueue lock instead of double lock'
+        depends on SNSC
+        default n
+        help
+          To decrease taking other cpu lock in __migrate_task(),
+          do not use double_rq_lock().
+
+config SNSC_ENABLE_INTERRUPT_IN_TICK_PERIODIC
+       bool "Enable interrupts in tick_periodic()"
+       depends on SNSC
+       default n
+       help
+         To decrease interrupt disabled duration from do_local_timer(),
+         enable interrupt in tick_periodic().
+
+config EJ_HANDLE_HRTIMER_EXPIRE_IN_SOFTIRQ
+       bool "Handle hrtimer expiration in hrtimer softirq"
+       depends on SNSC
+       depends on EJ
+       default n
+       help
+         Say Y here if you want to handle hrtimer expiration in
+         HRTIMER_SOFTIRQ, instead in hardware timer interrupt
+         handler context with IRQ disabled.
+
+         This can help to reduce irq disabled time.
+
+         If unsure, say N.
+
+config EJ_USE_RAISE_SOFTIRQ_IRQOFF_IF_IRQ_DISABLED
+       bool "Use raise_softirq_irqoff if irq is disabled"
+       depends on SNSC
+       depends on EJ
+       default n
+       help
+         Say Y here if you want to use raise_softirq_irqoff()
+         instead of raise_softirq().
+
+         If unsure, say N.
+
+config SNSC_ENABLE_INTERRUPT_IN_RUN_LOCAL_TIMERS
+       bool "Enable interrupts in run_local_timers()"
+       depends on SNSC
+       depends on !EJ_USE_TICK_TIMER
+       default n
+       help
+          To decrease interrupt disabled duration from do_local_timer(),
+          enable interrupt in run_local_timers() which is called by
+          update_process_times().
+
+config EJ_SS_O1_LOAD_BALANCE
+	bool  'SimplifyScheduler: make load balance of fair scheduler to o(1)'
+	# !GROUP_SCHED so compile of kernel/sched_rt.c will not fail
+	# !FAIR_GROUP_SCHED ensures that FAIR_GROUP_SCHED code is not
+	# compiled, instead of putting additional #ifndefs in sched_fair.c
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on !GROUP_SCHED
+	depends on !RT_GROUP_SCHED
+	depends on !FAIR_GROUP_SCHED
+	default n
+	help
+	  If say "Y" to this option, the load balance of fair scheduler will 
+	  be simplified from o(n) to o(1). The changes to the scheduler are 
+	  extensive.  Detailed information can be found in 
+	  Documentation/scheduler/sched-simplify.txt.
+
+config EJ_SS_REFINE_CPU_LOAD_CALC
+	bool "SimplifyScheduler: refine cpu load calculation"
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on !GROUP_SCHED
+	depends on !RT_GROUP_SCHED
+	depends on !FAIR_GROUP_SCHED
+	default n
+	help
+	  This option refine CPU Load Calculation to better suit system where
+	  there are many realtime threads runs actively.
+
+config EJ_SS_REDUCE_MIGRATION_FREQ
+	bool  'SimplifyScheduler: reduce the migration frequency of fair and rt scheduler'
+	# !GROUP_SCHED so compile of kernel/sched_rt.c will not fail
+	# !FAIR_GROUP_SCHED ensures that FAIR_GROUP_SCHED code is not
+	# compiled, instead of putting additional #ifndefs in sched_fair.c
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on !GROUP_SCHED
+	depends on !RT_GROUP_SCHED
+	depends on !FAIR_GROUP_SCHED
+	default n
+	help
+	  If say "Y" to this option, it reduces the task migration among CPUs
+	  to decline the time consumption on migration. The changes to the
+	  scheduler are extensive. Detailed information can be found in
+	  Documentation/scheduler/sched-simplify.txt.
+
+config EJ_SS_REDUCE_OS_TIMER_LOAD
+	bool  'SimplifyScheduler: reduce the os timer workload'
+	# !GROUP_SCHED so compile of kernel/sched_rt.c will not fail
+	# !FAIR_GROUP_SCHED ensures that FAIR_GROUP_SCHED code is not
+	# compiled, instead of putting additional #ifndefs in sched_fair.c
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on !GROUP_SCHED
+	depends on !RT_GROUP_SCHED
+	depends on !FAIR_GROUP_SCHED
+	default n
+	help
+	  If say "Y" here, for non-rt task, some task will move to TIMER_SOFTIRQ
+	  context, not in hardirq. that can reduce time tick hardirq duration.
+
+config EJ_SS_PULL_RT_TASK
+	bool  'SimplifyScheduler: pull rt task in pre_schedule_rt()'
+	# !GROUP_SCHED so compile of kernel/sched_rt.c will not fail
+	# !FAIR_GROUP_SCHED ensures that FAIR_GROUP_SCHED code is not
+	# compiled, instead of putting additional #ifndefs in sched_fair.c
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on !GROUP_SCHED
+	depends on !RT_GROUP_SCHED
+	depends on !FAIR_GROUP_SCHED
+	default n
+	help
+	  If say "Y" here, idle cpu will pull one rt task from other
+	  cpus during scheduling which can improve cpu usage. In this way,
+	  it could keep high CPU utilization of RT tasks, to be more precise,
+	  when a CPU's number of running RT tasks reach zero, this CPU will
+	  try to pull RT task from other CPUs.
+
+config EJ_SS_MISC
+	bool  'SimplifyScheduler: Miscellaneous part'
+	# !GROUP_SCHED so compile of kernel/sched_rt.c will not fail
+	# !FAIR_GROUP_SCHED ensures that FAIR_GROUP_SCHED code is not
+	# compiled, instead of putting additional #ifndefs in sched_fair.c
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on !GROUP_SCHED
+	depends on !RT_GROUP_SCHED
+	depends on !FAIR_GROUP_SCHED
+	default n
+	help
+	  This is miscellaneous part of simplify scheduler.
+
+config SNSC_WORKQUEUE
+	bool 'Old style workqueues. i.e. having seperate set of threads for each workqueue'
+	depends on SNSC
+	default n
+
+config SNSC_TIMER_SOFTIRQ_RQ_LOCK_GIVEUP
+	bool "Give up on attempt to wake TIMER_SOFTIRQ if unable to lock rq"
+	depends on SNSC
+	default n
+	help
+	  Limit the amount of time that an attempt to wake TIMER_SOFTIRQ will
+	  attempt to lock the rq.
+
+	  This may decrease maximum duration of do_local_timer(), which is a
+	  component of one of the IRQs disabled hot paths.  The minimum and
+	  average duration of do_local_timer() will probably increase.  The
+	  timer softirq will sometimes not be woken, so some timer events
+	  will occur later than expected.
+
+config SNSC_TIMER_SOFTIRQ_RQ_LOCK_ATTEMPT_TIME
+	int "Timeout duration (usec) on attempt to wake TIMER_SOFTIRQ"
+	range 0 100
+	depends on SNSC_TIMER_SOFTIRQ_RQ_LOCK_GIVEUP
+	default "6"
+	help
+	  The maximum amount of time to spin trying to lock the run queue in
+	  task_rq_lock(), while trying to wake up the timer softirq task.  If
+	  you set this value too low then timer events will be delayed often.
+	  The correct value is impacted by the system clock rate, system
+	  workload, and other items that impact system performance.
+
+	  To avoid total starvation of TIMER_SOFTIRQ, the timeout duration will
+	  increase (by the value specified for this configuration option) for
+	  each consecutive failure to wake TIMER_SOFTIRQ, until TIMER_SOFTIRQ
+	  is successfully woken.
+
+config SNSC_TIMER_SOFTIRQ_RQ_LOCK_GIVEUP_DEBUG
+	bool "Enable wake TIMER_SOFTIRQ giveup stats"
+	depends on SNSC_TIMER_SOFTIRQ_RQ_LOCK_GIVEUP
+	depends on SCHED_DEBUG
+	default n
+	help
+	  Add some statistics describing the wake TIMER_SOFTIRQ giveup
+	  algorithm to /proc/sched_debug.  This will add a very small amount
+	  of overhead to a hot path.
+
+	  The fields task_rq_lock, task_rq_lock_giveup and task_rq_lock_wait in
+	  /proc/sched_debug can be used to help determine a good value for
+	  timeout duration.
+
+	  task_rq_lock is a count of the number of times that a run queue lock
+	  was attempted, while trying to wake up the timer softirq task..
+
+	  task_rq_lock_wait is a count of the number of times that a wait for
+	  the run queue lock was attempted, while trying to wake up the timer
+	  softirq task.
+
+	  task_rq_lock_giveup is a count of the number of times that a timeout
+	  occurred, and the attempt to wake up the timer softirq was abandoned.
+
+	  task_rq_lock_giveup_extended is a count of the number of times that
+	  task_rq_lock_giveup occurred with an extended (increased) timeout.
+
+config EJ_LOG_ALWAYS_DUMPABLE
+	bool "Exception monitor always dump log"
+	depends on EJ
+	default n
+	help
+	  If disable, exception monitor does not drive.
+
+config SNSC_FORCE_ENABLE_TTWU_QUEUE
+	bool "Force enable TTWU_QUEUE sched feature"
+	depends on SNSC && !SNSC_TIMER_SOFTIRQ_RQ_LOCK_GIVEUP
+	default n
+	help
+	  If disable, TTWU_QUEUE is turned off for
+	  CONFIG_PREEMPT_RT_FULL

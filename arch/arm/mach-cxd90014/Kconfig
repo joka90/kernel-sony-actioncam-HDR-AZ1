@@ -1,0 +1,140 @@
+config ARCH_CXD90014BASED
+	bool
+	select CPU_V7
+	select ARM_GIC
+	select IRQ_PER_CPU
+	select ARCH_FLATMEM_ENABLE
+	select ARCH_SPARSEMEM_ENABLE
+#	select SPARSEMEM_STATIC
+	select ARCH_SELECT_MEMORY_MODEL
+#	select ZONE_DMA
+	select HAVE_CLK
+	select COMMON_CLKDEV
+	select GENERIC_TIME
+	select GENERIC_CLOCKEVENTS
+	select HAVE_SCHED_CLOCK
+	select ARM_AMBA
+	select AUTO_IRQ_AFFINITY if SMP
+	select CLKDEV_LOOKUP
+	select EJ
+	select ARCH_HAS_PM_SUSPEND_DISK
+	select MACH_HAS_TRAP_INIT
+	select MIGHT_HAVE_PCI
+	select HAVE_WATCHDOG
+
+if ARCH_CXD90014BASED
+
+menu "CXD90014 Options"
+
+comment "Memory Layout"
+config CXD90014_TEXT_OFFSET
+	hex "Text offset of kernel"
+	default 0x008000
+	help
+	  kernel will be compiled at 0x8000_0000 + TEXT_OFFSET
+
+config TASK_MMAP_OFFSET
+	hex "task mmap VM area"
+	default 0
+	help
+	  The lower boundary address of the mmap VM area.
+	  If this is set to 0, the address will be CONFIG_PAGE_OFFSET/2.
+
+config CXD90014_DDR512MB
+	bool "DDR 512MB"
+	default n
+
+comment "Misc config"
+config CXD90014_ADRSCONV_RELAX
+	bool "PHYS_TO_NONCACHE accepts VA"
+	default y
+	help
+	  PHYS_TO_NONCACHE accepts physical address and virtual address.
+
+config CXD90014_PCIE2_DMX
+	bool
+	depends on PCI && !QEMU
+	default y
+	help
+	  Support for pcie2_dmx driver.
+
+config CXD90014_NANDC
+	bool
+	depends on !QEMU
+	default y
+	help
+	  kernel set config NAND Controller Register
+
+config OVERCOMMIT_ALWAYS
+	bool "Always overcommit memory"
+	default y
+
+config OOM_CALLBACK
+	bool "Enable CALLBACKs if OOM Kill happens"
+	default y
+	help
+	  Print something useful during OOM,
+	  and then send SEGV to fall into EM.
+
+config EJ_AMBA_VIRTUAL
+	bool
+	default y
+
+config CXD90014_EXT_TIMER
+	bool "Use TIMER IP for local timer"
+	default y
+
+comment "Development support"
+
+config CXD90014_FPGA
+	bool "FPGA board"
+	default n
+	select CXD90014_SIMPLE_LOADER
+	select CXD90014_SIMPLE_SUSPEND
+
+config QEMU
+	bool "QEMU"
+	select EJ_DO_NOT_FREE_INIT
+	select CXD90014_SIMPLE_LOADER
+	select CXD90014_SIMPLE_SUSPEND
+
+config CXD90014_DDR_C2UNC
+	bool "Changes cache attribute of normal memory to uncacheable"
+	default y
+
+config CXD90014_SIMPLE_LOADER
+	bool
+	default n
+
+config CXD90014_SIMPLE_SUSPEND
+	bool
+	default n
+
+config DEBUG_EARLY
+	bool
+	depends on DEBUG_LL
+	default y
+
+config SMP_COMMON_ENTRY
+	bool "SMP COMMON Entry"
+	depends on SMP || MPCORE_GIC_INIT
+	default n
+	help
+	  If all CPU jumps to kernel entry point on reset, say Y.
+
+source "arch/arm/mach-cxd90014/Kconfig.uart"
+source "arch/arm/mach-cxd90014/Kconfig.ether"
+
+endmenu
+
+config MACH_HAS_TRAP_INIT
+	bool
+
+config HAVE_WATCHDOG
+	bool
+
+config ARM_DAP
+	bool
+	default y if !CXD90014_FPGA && !QEMU
+
+endif

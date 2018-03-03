@@ -1,0 +1,11 @@
+#!/bin/sh
+
+scripts/setup_common.py --full-name="ARM RealView/EB MPCore" \
+                        --cross-compile="arm-sony-linux-gnueabi-dev-" \
+                        --arch-name="arm" \
+                        --target-name="realview-eb" \
+                        --fixup-kernel-headers="scripts/kernel_headers/default.fixup" \
+                        --defconfig-base="arch/arm/configs/realview-eb_defconfig" \
+                        --build-instruction="make" \
+                        --image="arch/arm/boot/uImage" \
+                        "$@"

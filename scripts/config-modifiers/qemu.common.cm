@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+scripts/setconfig.py -f - <<_EOF_
+#Common config
+_EOF_

@@ -1,0 +1,144 @@
+config PREEMPT
+	bool
+
+config PREEMPT_RT_BASE
+	bool
+	select PREEMPT
+
+choice
+	prompt "Preemption Model"
+	default PREEMPT_NONE
+
+config PREEMPT_NONE
+	bool "No Forced Preemption (Server)"
+	help
+	  This is the traditional Linux preemption model, geared towards
+	  throughput. It will still provide good latencies most of the
+	  time, but there are no guarantees and occasional longer delays
+	  are possible.
+
+	  Select this option if you are building a kernel for a server or
+	  scientific/computation system, or if you want to maximize the
+	  raw processing power of the kernel, irrespective of scheduling
+	  latencies.
+
+config PREEMPT_VOLUNTARY
+	bool "Voluntary Kernel Preemption (Desktop)"
+	help
+	  This option reduces the latency of the kernel by adding more
+	  "explicit preemption points" to the kernel code. These new
+	  preemption points have been selected to reduce the maximum
+	  latency of rescheduling, providing faster application reactions,
+	  at the cost of slightly lower throughput.
+
+	  This allows reaction to interactive events by allowing a
+	  low priority process to voluntarily preempt itself even if it
+	  is in kernel mode executing a system call. This allows
+	  applications to run more 'smoothly' even when the system is
+	  under load.
+
+	  Select this if you are building a kernel for a desktop system.
+
+config PREEMPT_LL
+	bool "Preemptible Kernel (Low-Latency Desktop)"
+	select PREEMPT
+	help
+	  This option reduces the latency of the kernel by making
+	  all kernel code (that is not executing in a critical section)
+	  preemptible.  This allows reaction to interactive events by
+	  permitting a low priority process to be preempted involuntarily
+	  even if it is in kernel mode executing a system call and would
+	  otherwise not be about to reach a natural preemption point.
+	  This allows applications to run more 'smoothly' even when the
+	  system is under load, at the cost of slightly lower throughput
+	  and a slight runtime overhead to kernel code.
+
+	  Select this if you are building a kernel for a desktop or
+	  embedded system with latency requirements in the milliseconds
+	  range.
+
+config PREEMPT_RTB
+	bool "Preemptible Kernel (Basic RT)"
+	select PREEMPT_RT_BASE
+	help
+	  This option is basically the same as (Low-Latency Desktop) but
+	  enables changes which are preliminary for the full preemptiple
+	  RT kernel.
+
+config PREEMPT_RT_FULL
+	bool "Fully Preemptible Kernel (RT)"
+	depends on IRQ_FORCED_THREADING
+	select PREEMPT_RT_BASE
+	help
+	  All and everything
+
+endchoice
+
+menu "RT tuning options (NOT IN MAILINE KERNEL)"
+
+config SNSC_RT_OVERLOAD
+	int "Real-time process overload floor (2-7)"
+	range 2 7
+	default "2"
+	depends on SMP
+	depends on SNSC
+	help
+	  The number of running real-time processes on a processor that is
+	  considered an overload.  When the number of real-time processes in
+	  the run queue is equal to or greater than the floor, real-time
+	  processes will be pushed to a different processor.
+
+	  Recommended values are 2 (default) or 3 or 4 (for less aggressive
+	  migration).  Larger values may result in longer scheduling latencies
+	  for real time processes.  Smaller values may result in a real time
+	  process less likely to remain on a single processor.
+
+config SNSC_RT_OVERLOAD_HIPRI
+	bool "No processes with priority <= MID_USER_RT_PRIO in overload count"
+	default y
+	depends on PREEMPT_RT_FULL && SMP
+	depends on SNSC
+	help
+	  Do not include processes with a priority <= MID_USER_RT_PRIO in the
+	  overload count that the Real-time process overload floor option is
+	  checking against.
+
+	  Softirq threads normally have a priority of MID_USER_RT_PRIO.
+
+config SNSC_RT_NO_PUSH_IF_SLEEP
+	bool "Do not push RT task if current is about to sleep"
+	default n
+	depends on SMP
+	depends on SNSC
+	help
+	  If a real-time task is running when another real-time task is woken,
+	  the woken task is normally pushed to another processor.  If this
+	  option is selected, the woken real-time task is not pushed if the
+	  current task is about to sleep (state != TASK_RUNNING).
+
+config SNSC_IRQ_OVERHEAD_ONCE
+	bool "Perform IRQ overhead only once for each group of events"
+	default n
+	depends on PREEMPT_RT_FULL && (ARCH_NE1 || ARCH_EMXX || ARCH_CXD90014BASED)
+	depends on SNSC
+	depends on !SNSC_ARM_REDUCE_ICACHE_INVALIDATION
+	help
+	  The normal algorithm for processing interrupts does interrupt
+	  pre- and post- processing once for each interrupt.  This option
+	  does interrupt pre-processing, then handles all of the interrupts,
+	  then does interrupt post-processing.
+
+	  If interrupts arrive in a clump frequently enough then enabling
+	  this option will reduce irq disabled latency.
+
+config SNSC_DEBUG_IRQ_OVERHEAD_ONCE
+	bool "DEBUG Perform IRQ overhead only once for each group of events"
+	default n
+	depends on SNSC_IRQ_OVERHEAD_ONCE
+	help
+	  Add counters to measure behavior of SNSC_IRQ_OVERHEAD_ONCE.  The counters
+	  are reported in /proc/interrupts.
+
+endmenu
+
+

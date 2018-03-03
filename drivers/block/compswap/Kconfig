@@ -1,0 +1,22 @@
+config COMPSWAP
+	tristate "CompSwap device"
+	depends on SWAP
+	default y
+
+if COMPSWAP
+
+config COMPSWAP_LZO_COMPRESSION
+	tristate "CompSwap LZO Plugin"
+	default y
+	select LZO_COMPRESS
+	select LZO_DECOMPRESS
+
+config COMPSWAP_MAJOR_NR
+	int "Device major number"
+	range 0 255
+	default 0
+	help
+	  If you set 0, major number is automatically selected
+
+endif # COMPSWAP
+

@@ -1,0 +1,28 @@
+#
+# SNSC related configurations
+#
+
+config SNSC_PM_SCHED_NORMAL_AT_FREEZE
+	bool "Change scheduling policy to normal at freezing tasks"
+	depends on SNSC
+	depends on PM_SLEEP
+	default n
+
+config SNSC_PMMEM
+	bool "pmmem support"
+	depends on SNSC
+	depends on SNSC_NBLARGS
+	default n
+
+config SNSC_PMMEM_MAX
+	int 'Max number of pmmem save area'
+	depends on SNSC
+	depends on SNSC_PMMEM
+	default 16
+
+config SNSC_PMMEM_USE_NBLARGS
+	bool
+	depends on SNSC
+	depends on SNSC_NBLARGS
+	depends on SNSC_PMMEM
+	default y

@@ -1,0 +1,80 @@
+#
+# Snapshot Boot related configurations
+#
+
+menuconfig SNSC_SSBOOT
+	bool "Snapshot Boot support"
+	depends on !HIBERNATION
+	depends on SNSC
+	default n
+	select SUSPEND
+
+config SNSC_SSBOOT_DEBUG
+	bool "Snapshot Boot debugging support"
+	depends on SNSC_SSBOOT
+	default n
+
+config SNSC_SSBOOT_DEBUG_SECTION
+	bool "Show section information"
+	depends on SNSC_SSBOOT_DEBUG
+	default n
+
+config SNSC_SSBOOT_PAGE_STAT
+	bool "Show page statistics information"
+	depends on SNSC_SSBOOT
+	default y
+
+config SNSC_SSBOOT_NO_KERNEL
+	bool "Exclude kernel R/O sections"
+	depends on SNSC_SSBOOT
+	default n
+
+
+config SNSC_SSBOOT_PAGE_ATTR_DUMP
+	tristate "Page Attr Dump Writer support"
+	depends on SNSC_SSBOOT
+	default n
+
+config SNSC_SSBOOT_PAGE_ATTR_DUMP_FILE_NAME
+	string "Page Attr Dump Writer filename"
+	depends on SNSC_SSBOOT_PAGE_ATTR_DUMP
+	default "/tmp/page_attr_dump.txt"
+
+config SNSC_SSBOOT_SBI
+	tristate "SBI writer support"
+	depends on SNSC_SSBOOT
+	default y
+
+config SNSC_SSBOOT_SBI_FILE
+	tristate "Generic SBI file writer"
+	depends on SNSC_SSBOOT_SBI
+	default y
+
+config SNSC_SSBOOT_SBI_FILE_NAME
+	string "Default SBI filename"
+	depends on SNSC_SSBOOT_SBI_FILE
+	default "/ssboot.sbi"
+
+choice
+	prompt "Image optimizer"
+	default SNSC_SSBOOT_BASIC_OPTIMIZER
+
+config SNSC_SSBOOT_SAMPLE_OPTIMIZER
+	tristate "Sample image optimizer support"
+	depends on SNSC_SSBOOT
+
+config SNSC_SSBOOT_BASIC_OPTIMIZER
+	tristate "Basic image optimizer support"
+	depends on SNSC_SSBOOT
+
+endchoice
+
+config SNSC_SSBOOT_BASIC_OPTIMIZER_PROFILE_NAME
+	string "Default profiling data file name for basic optimizer"
+	depends on SNSC_SSBOOT_BASIC_OPTIMIZER
+	default "/ssboot_prof.bin"
+
+config SNSC_SSBOOT_DEBUG_BASIC_OPTIMIZER
+       bool "Snapshot Boot debugging support for basic optimizer"
+       depends on SNSC_SSBOOT_BASIC_OPTIMIZER
+       default n

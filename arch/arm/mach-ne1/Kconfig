@@ -1,0 +1,40 @@
+menu "NaviEngine1 platform type"
+        depends on ARCH_NE1
+
+config MACH_NE1TB
+        bool "Support NE1-TB platform"
+	select CPU_V6K
+	select ARM_ERRATA_484863 if CACHE_L2X0
+	select SNSC_DISABLED_8250_UART_BUG_TXEN if SERIAL_8250
+	default y
+        help
+          Include support for the NE1-TB platform.
+
+config MACH_NE1DB
+        bool "Support NE1-DB platform"
+	default n
+        help
+          Include support for the NE1-DB platform.
+
+menu "Device drivers for the NaviEngine1 embedded controllers"
+#       depends on (MACH_NE1TB || MACH_NE1DB)
+
+config NE1_GPIO
+	bool
+	default n
+
+config NE1_USB
+	bool "Support NE1 OHCI/EHCI USB driver"
+	depends on PCI
+	default n
+	help
+	  Include support for the NE1 OHCI/EHCI USB interface.
+
+endmenu
+
+menu "Device drivers for the NE1-xB on-board devices"
+#       depends on (MACH_NE1TB || MACH_NE1DB)
+
+endmenu
+
+endmenu

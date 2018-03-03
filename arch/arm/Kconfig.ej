@@ -1,0 +1,105 @@
+# EJ
+
+config EJ_EXPORT_RAISE_SOFT_INTERRUPT
+	bool  'export gic raise soft interrupt function'
+	depends on ARCH_CXD90014 || ARCH_CXD4132
+	default n
+
+config THREAD_MONITOR
+	bool "thread monitor"
+	depends on ARCH_CXD90014
+	default n
+
+config SUBSYSTEM
+	depends on ARCH_CXD90014
+	tristate "Emulate subsystem"
+	default y
+
+config EJ_DO_NOT_DISABLE_FIQ
+	bool "Do not disable FIQ"
+	default y if ARCH_CXD90014BASED
+
+config EJ_DO_NOT_FREE_INIT
+	bool
+	default n
+
+config EJ_WORKAROUND_MMAP_RESERVED_PAGE
+	bool "Work around for mmapping PageReserved page"
+	default y if ARCH_CXD90014BASED
+
+config EJ_SETUP_IRQ_AFFINITY
+	bool "Setup IRQ Affinity"
+	default y if ARCH_CXD90014BASED
+
+config EJ_IRQ_THREAD_PRIORITY
+	bool "Specify priority of irq_threads"
+	default y if ARCH_CXD90014BASED
+
+config EJ_SOFTIRQD_PRIORITY
+	bool "Specify priority of softirqd"
+	default y if ARCH_CXD90014BASED
+
+config EJ_KSLOG
+	bool "kslog"
+	depends on ARCH_CXD90014
+	default n
+
+config EJ_STATIC_VECTOR_PAGE
+	bool "allocate vector_page at static address"
+        default y if ARCH_CXD90014BASED
+
+config EJ_PL310_ATOMIC
+	bool "Cache accessed by atomic operation"
+	default y if ARCH_CXD90014BASED
+
+config EJ_PL310_LOCKLESS
+	bool "Cache operation does not require a lock."
+	depends on EJ_PL310_ATOMIC && !PL310_ERRATA_588369
+	default n
+
+config EJ_CLEAR_MEMORY
+        bool "Clear free memory at boot"
+        default y if ARCH_CXD90014BASED
+
+config EJ_WBI_DEBUG
+        bool "Debug WBI creation"
+        depends on WARM_BOOT_IMAGE
+        select EJ_KSLOG
+        default n
+
+config EJ_FLUSH_ENTIRE_L2CACHE
+        bool "Flush entier L2 cache when the area larger then the threshold"
+        default y if ARCH_CXD90014BASED
+
+config EJ_GUP_EXPAND
+	bool "Expand get_user_page"
+	default y
+
+config EJ_CACHE_COHERENCY_EXPAND
+	bool "Expand flush_dcache_page"
+	default y
+
+config EJ_UNDEF_HANDLER
+	bool "Handle und_svc in both ARM and THUMB mode"
+	default y
+
+config EJ_SUSPEND_FREEZE_ERROR
+	bool "BUG on suspend_freeze_processes error"
+	default y if ARCH_CXD90014BASED
+
+config EJ_DO_NOT_MIGRATE_IRQS
+	bool "Do not migrate IRQs on CPU offline"
+	default y if ARCH_CXD90014BASED
+
+config EJ_SECTION_GROUP_NO_UEVENT
+	bool "Section group does not use uevent"
+	default y
+
+config EJ_REDUCE_THREADINFO
+	bool "Reduce the size of thread_info"
+	default n
+
+config EJ_SCHED_DEBUG
+	bool "Debug scheduler(task wakeup and migration)"
+	select EJ_KSLOG
+	default n

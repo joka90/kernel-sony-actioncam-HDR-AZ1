@@ -1,0 +1,12 @@
+#!/bin/sh
+
+scripts/setup_common.py --full-name="NEC NaviEngine" \
+                        --cross-compile="arm-sony-linux-gnueabi-dev-" \
+                        --arch-name="arm" \
+                        --target-name="naviengine" \
+                        --fixup-kernel-headers="scripts/kernel_headers/default.fixup" \
+                        --defconfig-base="arch/arm/configs/ne1tb_defconfig" \
+                        --build-instruction="make" \
+                        --image="arch/arm/boot/uImage" \
+			"ssfat"				\
+                        "$@"

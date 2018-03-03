@@ -1,0 +1,377 @@
+#
+# SNSC related configurations
+#
+
+config SNSC_ARM_REDUCE_ICACHE_INVALIDATION
+       bool "Reduce I-cache invalidation on ARM v6 and later"
+       depends on SNSC
+       depends on CPU_CACHE_V6 || CPU_CACHE_V7
+       default n
+
+config SNSC_DEBUG_STACK_USAGE
+	bool "Enable kernel stack utilization"
+	depends on SNSC
+	select DEBUG_STACK_USAGE
+	default n
+	help
+	  Enables the display of the minimum amount of free stack for each
+	  task in /proc/kstack. Data of exited processes are recorded to
+	  memory.
+
+config SNSC_CORRECT_PMD_CALCULATION_WHEN_AFE_IS_ENABLED
+       bool "Correct pmd calculation when CONFIG_CPU_AFE==y"
+       depends on CPU_AFE
+       default y
+       help
+
+         If CONFIG_CPU_AFE==y, pmd calculation is wrong in
+         alloc_init_section() (called by create_mapping()), which may
+         produce wrong page tale entries when the size of memory chunk
+         passed to it is below 4M.
+
+config SNSC_ARM_DMA_REDUCE_CACHE_OPS
+	bool "Reduce cache operations for large DMA buffer"
+	depends on CPU_V7
+	select SNSC_ARM_DMA_REDUCE_CACHE_OPS_UP if !SMP
+	select SNSC_ARM_DMA_REDUCE_CACHE_OPS_SMP if SMP
+	default n
+	help
+	  For the large DMA buffers which are in excess of cache size,
+	  the maintenance operations by MVA are very slow. For such
+	  buffers, enabling this speed up the maintenance operations
+	  by using the set/way based method.
+
+config SNSC_ARM_DMA_REDUCE_CACHE_OPS_UP
+	bool
+
+config SNSC_ARM_DMA_REDUCE_CACHE_OPS_SMP
+	bool
+
+config SNSC_ARM_DMA_REDUCE_CACHE_OPS_THRESHOLD
+	int "Threshold to clean/flush whole cache"
+	depends on SNSC_ARM_DMA_REDUCE_CACHE_OPS_SMP
+	default 0
+	help
+	  Threshold to clean/flush whole cache. If set to 0, actual
+	  cache size is used. Note that because clean/flush for whole
+	  cache by this feature takes quite a overhead, the threshold
+	  should be larger than cache size.
+
+config SNSC_ARM_DMA_SKIP_OUTER_CACHE_OPS_FOR_OUTER_NONCACHEABLE_REGION
+	bool "Skip outer cache operations for outer noncacheable DMA region"
+	depends on CPU_V7
+	depends on OUTER_CACHE
+	default n
+	help
+          Outer cache operations like clean, invalidate, and
+	  clean+invalidate for outer noncacheable DMA region are
+	  useless. For such regions, enabling this speed up the
+	  maintenance operations by skipping useless cache operations.
+
+config SNSC_FIX_RACE_IN_UNWIND_CODE
+	bool "Fix a race condition in the stack unwinding code"
+	depends on SNSC
+	depends on !ARM_UNWIND
+	default y if SMP || PREEMPT
+	help
+	  If the get_wchan() is called to the stopped task, but the task
+	  restarted before the completion of the get_wchan(), it causes
+	  a race condition.
+	  So, the kernel stack might be modified by the restarted task,
+	  we need to be more careful to unwind the kernel stack.
+	  This option enables more checking codes.
+
+config 4KSTACKS
+	bool "Use 4k kernel stacks instead of 8k"
+	default n
+	help
+	  This option will use less memory for each kernel stack in the
+	  system, which can save potentially hundreds of kilobytes of memory.
+	  It also helps reduce fragmentation in kernel memory.  However,
+	  it can be dangerous since not all kernel code paths are thrifty
+	  with allocating memory.  Unless you have carefully monitored your
+	  kernel stack usage and verified that you programs and kernel
+	  usage patterns will not overflow 4k, you should leave this set
+	  to N.
+
+config SNSC_DEBUG_STACK_LIMIT
+	bool "Enable kernel stack limitation"
+	select SNSC_SUPPORT_4KB_MAPPING
+	depends on !SNSC_MULTI_STACK_SIZES
+	help
+	  Enables the limitation for kernel stack size. An exception will be
+	  raised when kernel stack overflows. The kernel stack size is
+	  changed to 16k instead of 8k for this function.
+
+config SNSC_DEBUG_STACK_LIMIT_MANUAL
+	bool "Set the kernel stack limit manually"
+	depends on SNSC_DEBUG_STACK_LIMIT
+	help
+	  If you limit the kernel stack size manually, say 'Y' here.
+	  Otherwise, the kernel stack size is set to the default value.
+
+config SNSC_DEBUG_STACK_LIMIT_BYTES
+	int "Kernel stack limit (bytes)"
+	depends on SNSC_DEBUG_STACK_LIMIT_MANUAL
+	range 0 12288
+	default 4096
+
+config SNSC_SUPPORT_4KB_MAPPING
+       bool "Support 4KB page mapping for kernel memory"
+       default n
+
+config SNSC_PROC_DEEPSTACK_TEST
+	bool "Enable /proc/deepstack test feature"
+	default n
+	help
+	  Enables /proc/deepstack, which is used to test stack overrun
+	  detection on the kernel.  If overrun detection is enabled,
+	  try: 'echo 1 >/proc/deepstack' to force a kernel stack overrun.
+
+	  Do not do this without stack overrun detection enabled, as the
+	  results are undefined.
+
+config SNSC_MULTI_STACK_SIZES
+	bool "Support multiple stack sizes (both 4K and 8K) at runtime"
+	depends on !4KSTACKS
+	default n
+	help
+	  This option allows users to control the kernel stack size for
+	  processes in the system, on a case-by-case basis.  By default,
+	  a process' kernel stack size is 8K, but a user can do:
+	  $ echo 4096 >/proc/<pid>/child_stack_size and all children of
+	  the indicated process will be forked with a 4K stack.
+	  DO NOT DO THIS unless you have carefully monitored your
+	  kernel stack usage and verified that your programs and kernel
+	  usage patterns will not overflow 4k, for those processes you
+	  configure for smaller stacks.
+
+config SNSC_MAX_ALT_STACKS
+	int "Maximum number of alternate-sized stacks"
+	depends on SNSC_MULTI_STACK_SIZES
+	default 64
+	help
+	  This value specifies the max number of stacks, of alternate size,
+	  that can be allocated in the system.  This is fixed at system
+	  start time.  Once the alternate-sized stacks are all allocated,
+	  the kernel will fall back to allocating regular size stacks.
+
+	  This number should correspond to the maximum number of processes
+	  that are anticipated to be executed with an alternate stack size.
+	  See CONFIG_SNSC_MULTI_STACK_SIZES.
+
+	  This should be a power of two.
+
+config SNSC_ALT_STACKS_SHOW_MAX_USED
+	bool "Show the maximum number of alternate stack pages used"
+	depends on SNSC_MULTI_STACK_SIZES || STACK_EXTENSIONS
+	default n 
+	help
+	  This option turns on a monitoring feature, to show the maximum
+	  number of simultaneously used alternate stack pages.  The alternate
+	  stack pool is used for either multi-stacks or stack extension pages.
+
+	  When this option is set to 'Y', the kernel reports the maximum
+	  number of stack pages used.  It does a new printk every time a new
+	  maximum is reached.  This can be used to fine tune the size of
+	  the alternate stack page pool.  To see the printk, do:
+	     $ dmesg | grep alt_stack
+
+	  Note that for the stack extensions feature, the size of the pool
+	  must be modified by editing the value MAX_ALT_STACKS in
+	  mm/altstack.c
+
+config SNSC_START_WITH_4K_STACK_SIZE
+	bool "Default to 4K for starting stack size, rather than 8K"
+	depends on SNSC_MULTI_STACK_SIZES
+	default n
+	help
+	  By default the kernel starts with 8K stacks size and the multi-stacks
+	  feature allows for some processes to be 4K.  By choosing 'Y' here,
+	  the kernel will start with a stack size of 4K for processes.
+
+	  Setting this to 'Y' uses less memory on startup.  However, the
+	  alternate stack size pool should be adjusted to account for the
+	  number of threads in startup that consume 4k pages from that stack
+	  pool. (see CONFIG_SNSC_MAX_ALT_STACKS)
+
+config SNSC_USE_MPIDR_FOR_SMP_PROCESSOR_ID
+	bool "Use MPIDR for smp_processor_id()"
+	depends on SNSC
+	depends on SMP && (CPU_V6 || CPU_V7)
+	default n
+	help
+	  Use the Multiprocessor Affinity Register (MPIDR), which was the
+	  CPU ID Register at the ARM11 MPCore processor, in the system
+	  controll coprocessor 15 for the smp_processor_id().
+	  It is slower than original code if no cache miss occurred, but
+	  it is expected to have less cache miss.
+
+config SNSC_USE_MPIDR_DIRECT
+	bool "Use MPIDR directly as smp_processor_id()"
+	depends on SNSC_USE_MPIDR_FOR_SMP_PROCESSOR_ID && CPU_V6
+	default n
+	help
+	  If the Cluster ID field in the CPU ID Register is set to zero
+	  on the ARM11 MPCore processor, use the CPU ID Register directy
+	  as the smp_processor_id().
+
+config SNSC_LOCAL_TIMER_AVOID_WAKEUP_SOFTIRQ
+	bool "avoid double wakeup softirq in do_local_timer"
+	depends on SNSC
+	depends on LOCAL_TIMERS
+	default n
+	help
+	  wakeup_softirqd() is called twice in do_local_timer().  If you say Y,
+	  the second call of wakeup_softirqd() is removed from ipi_timer().
+
+config SNSC_REMOVE_GIC_ACK_LOCK
+	bool "GIC remove lock of ack/enable/disable interrupts"
+	depends on SNSC
+	default n
+
+config THREAD_INFO_INDIRECT
+	bool "Add a pointer to thread_info to bottom of stack page"
+	default n
+	help
+	  This is in preparation for supporting stack extensions
+
+config STACK_EXTENSIONS
+	bool "Support runtime stack extension"
+	depends on THREAD_INFO_INDIRECT
+	default n
+	help
+	  Turn this on to allow the kernel to allocate and use a secondary
+	  stack for a thread, when the stack is about to overflow.
+
+	  Do not turn this on unless you know what you are doing!
+
+config SNSC_VFP_DETECTION
+	bool "VFP detection"
+	depends on VFP
+	depends on SNSC
+	default n
+
+config SNSC_VFP_DETECTION_IRQ
+	bool "VFP detection in IRQ context"
+	depends on SNSC_VFP_DETECTION
+	default n
+	help
+	  Enable this option to detect VFP instruction in IRQ context.
+	  kernel will raise warning if VFP instruction executed in
+	  IRQ context.
+
+	  If unsure, say N.
+
+config SNSC_VFP_DETECTION_IOCTL
+	bool "VFP detection in ioctl context"
+	depends on SNSC_VFP_DETECTION
+	default n
+	help
+	  Enable this option to detect VFP instruction in ioctl context.
+	  kernel will raise warning if VFP instruction executed in ioctl
+	  context.
+
+	  If unsure, say N.
+
+comment "EJ related"
+
+config EJ_DMA_MAP_SG
+	bool "another dma_map_sg"
+	depends on EJ
+	default y if ARCH_CXD90014BASED
+
+config EJ_DONT_FLUSH_UNCACHED_PAGE
+	bool "enable to optimize out flushing uncached page"
+	depends on EJ
+	default y if ARCH_CXD90014BASED
+
+config EJ_DMA_CACHE_STAT
+	bool "DEBUG: cache flush statistics"
+	depends on EJ
+	default n
+
+config EJ_ON_EACH_CPU_THREADED
+       bool "on_each_cpu() have capability of threaded execute"
+       depends on EJ
+       depends on SMP
+       depends on SNSC_WORKQUEUE
+       default n
+
+config EJ_THREADED_CPU_BROADCAST
+       bool "enable to execute IPI in keventd"
+       depends on EJ_ON_EACH_CPU_THREADED
+       depends on EJ
+       default n
+       help
+         This option can be set with EJ_ON_EACH_CPU_THREADED.
+
+config EJ_THREADED_CPU_BROADCAST_ALL
+	bool "All flush_tlb_*() functions use keventd (or kipid)"
+	depends on EJ_THREADED_CPU_BROADCAST
+	depends on EJ_ON_EACH_CPU_THREADED
+	depends on EJ
+	default y
+	help
+	  If this option is set to 'N',
+	  a flush_tlb_page() only uses keventd (or kipid).
+
+config EJ_ON_EACH_CPU_THREADED_ON_KIPID
+       bool "Create a new kthread(kipid) for on_each_cpu"
+       depends on EJ_ON_EACH_CPU_THREADED
+       depends on EJ
+       default y if EJ_THREADED_CPU_BROADCAST
+       help
+         By default, EJ_THREADED_CPU_BROADCAST uses kernel thread
+         "events/[0,1...]" to on_each_cpu() jobs. This will cause
+         deadlock with OPROFILE.
+
+         Say Y here to create a new kernel thread named "kipid"
+         to do this job.
+
+config EJ_ARCH_HAVE_SMP_CALL_FUNCTION
+       bool "Use arch smp_call_function"
+       depends on EJ && SMP
+       select SNSC_REPLACE_LOCAL_IRQ_DISABLE_FOR_BLK_CPU_DONE
+       default n
+       help
+         Use arch smp_call_function() instead generic one. This
+         reduces some time for taking the spinlock.
+
+config SNSC_SCHED_FIX_YIELD_FOR_RT_TASKS
+       bool "Fix yield for realtime tasks"
+       depends on SNSC
+       default n
+       help
+       fixes yield() to process other threads explicitly for RT tasks
+       to avoid system hang up.
+
+config EJ_IRQ_ENABLE_SCHED_RET_TO_USER
+       bool "irq enable before calling schedule in schedule_ret_to_user()"
+       depends on EJ
+       default n
+
+config SNSC_DISABLED_8250_UART_BUG_TXEN
+       bool "Disbaled UART_BUG_TXEN workaround for 8250 drivers"
+       depends on SERIAL_8250
+       default n
+
+config EJ_ON_EACH_CPU_THREAD_PRIORITY
+	int "kipid kernel thread priority"
+	range 1 159
+	default 159
+	depends on EJ_ON_EACH_CPU_THREADED_ON_KIPID
+	help
+	  By default, the rt priority for kipid kernel thread is 1,
+	  which is pretty low. Change this config value to make it
+	  higher.
+
+	  Note this value is passed to sched_setscheduler(), thus
+	  larger value means higher priority.
+
+config EJ_COMPAT_RW_SEMAPHORE
+	bool "Enable compat_rw_semaphore struct"
+	depends on EJ
+	default y if ARCH_CXD90014BASED
+	help
+	  If enabled, allows to use compat_rw_semaphore struct.

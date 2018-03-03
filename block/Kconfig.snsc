@@ -1,0 +1,20 @@
+if BLOCK
+
+menu "SNSC Configurations"
+
+comment "SNSC related options"
+	depends on SNSC
+
+config SNSC_ROOTFS_NOATIME
+        bool "Ability to specify noatime from kernel cmdline."
+        depends on SNSC
+        default y
+
+config SNSC_REPLACE_LOCAL_IRQ_DISABLE_FOR_BLK_CPU_DONE
+        bool "Use preempt_disable() for protecting blk_cpu_done list"
+        depends on SNSC && PREEMPT_RT_FULL
+        default n
+
+endmenu
+
+endif # BLOCK

@@ -1,0 +1,146 @@
+comment "SNSC options"
+	depends on SNSC
+
+config SNSC_KSWAPD_DEF_PRIORITY
+	int "DEF_PRIORITY parameter for kswapd"
+	depends on SNSC
+	default "12"
+	help
+	  Select DEF_PRIORITY parameter for kswapd.
+	  Examples:
+	    Memory size  DEF_PRIORITY
+             16MB- 64MB   7
+             64MB-256MB   8
+            256MB-  1GB   9
+              1GB-  4GB  10
+
+config SNSC_KSWAPD_VARIABLE_DEF_PRIORITY
+	bool
+
+config SNSC_KSWAPD_CMDLINE_DEF_PRIORITY
+	bool "Support \"def_priority\" command line parameter"
+	depends on SNSC
+	depends on ARM
+	default n
+	select SNSC_KSWAPD_VARIABLE_DEF_PRIORITY
+	help
+	  Support "def_priority" command line parameter
+	  to change DEF_PRIORITY_parameter for kswapd.
+
+config SNSC_KSWAPD_DYNAMIC_DEF_PRIORITY
+	bool "Allow DEF_PRIORITY to be changed dynamically"
+	depends on SNSC
+	default n
+	select SNSC_KSWAPD_VARIABLE_DEF_PRIORITY
+	help
+	  Support /proc/sys/vm/kswapd_def_priority file
+	  to change DEF_PRIORITY parameter for kswapd.
+
+config SNSC_GROUP_SPARSEMEM_SECTIONS
+	bool
+	default y
+	depends on MEMORY_HOTPLUG
+	help
+	  Group memory sections for convinient memory hot plug and remove.
+	  Use kernel parameter
+
+	  secgrp=<size>@<start>@<nid>:<online/offline>[:name]
+
+	  to specify a group.
+
+config SNSC_GATHER_MEMMAP_FOR_SECTIONS
+	default y
+	bool
+	depends on SNSC_GROUP_SPARSEMEM_SECTIONS
+	help
+	  When section size become smaller, the memmap[] for one section
+ 	  will be less than a page's size. But kernel will allocate at
+ 	  least one page for it, which leads to a memory waste. This
+ 	  configuration enables the kernel to allocate memmap[] for a group
+ 	  of contiguous sections.
+
+config SNSC_DEFAULT_SWAPPINESS_OPTION
+	bool "Change default swappiness value"
+	depends on SNSC
+	default n
+
+config SNSC_DEFAULT_SWAPPINESS
+	int "Default swappiness value (0-100)"
+	range 0 100
+	depends on SNSC_DEFAULT_SWAPPINESS_OPTION
+	default 60
+
+config SNSC_KEEP_ANON_PAGES_ACTIVE_IF_NO_SWAP_AVAILABLE
+	bool "Keep anonymous pages active if no swap space is available"
+	depends on SNSC
+	default n
+	help
+	  If no swap space is available,
+	  keep anonymous pages in the active anon list.
+
+config SNSC_POISON_FREED_INIT_PAGES
+	bool "Poison freed __init memory."
+	depends on ARM
+	default n
+	help
+	  Poison freed __init memory.  This helps to detect some obscure
+	  bugs, caused by accessing __init memory after being freed.
+
+config SNSC_HOTREMOVE_RETRY_DELAY
+	prompt "Memory hotremove failure retry delay value"
+	int
+	depends on MEMORY_HOTREMOVE
+	default 40
+	help
+	 Allows configuration of the value of timeout delay for retrying on
+         memory hoteremove failure. The retry logic retries for 5 iterations.
+         The timeout delay used in Nth iteration of retry is :
+           N * CONFIG_SNSC_HOTREMOVE_RETRY_DELAY [ms]
+         Above timeout is in milliseconds.
+         IMPORTANT: If you are unsure, Please do not change the defualt value.
+
+config SNSC_TEST_HEAVY_IO_SIMULATION_USING_DELAY
+	bool "Simulate heavy I/O using delay"
+	depends on MEMORY_HOTREMOVE
+	default n
+	help
+	  Allows simulation of heavy I/O by introducing delay between
+	  page frame allocation and addtion to LRU.
+
+config SNSC_TEST_HEAVY_IO_SIMULATION_USING_DELAY_LOOP_COUNT
+	prompt "Loop count for udelay() function"
+	int
+	depends on SNSC_TEST_HEAVY_IO_SIMULATION_USING_DELAY
+	default 15
+	help
+	  Specifies loop count for calling udelay().
+	  IMPORTANT: If you are unsure, Please do not change the defualt value.
+
+
+config SNSC_TEST_HEAVY_IO_SIMULATION_USING_DELAY_VALUE
+	prompt "Value passed to udelay() function"
+	int
+	depends on SNSC_TEST_HEAVY_IO_SIMULATION_USING_DELAY
+	default 500
+	help
+	  Specifies delay value in micro seconds to be passed to
+	  udelay().
+	  IMPORTANT: Does not support value more than 1000.
+	             If you are unsure, Please do not change
+	             the defualt value.
+
+config SNSC_MEMPLUG_TEST_SUITE
+	bool "Select this when running memplug test suite"
+	depends on SNSC_MEMPLUG
+	default n
+	help
+	  This option is needed to run memplug test suite.
+
+config SNSC_FB_WORKAROUND
+	bool "Workaround for Frame Buffer"
+	depends on ARM
+	default y
+	help
+	  Set this for enabling frame buffer.
+
+

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+scripts/setup_common.py --full-name="OMAP35x Torpedo Board" \
+                        --cross-compile="arm-sony-linux-gnueabi-dev-" \
+                        --arch-name="arm" \
+                        --target-name="omap3torpedo" \
+                        --fixup-kernel-headers="scripts/kernel_headers/default.fixup" \
+                        --defconfig-base="arch/arm/configs/omap3_torpedo_defconfig" \
+                        --build-instruction="make" \
+                        --image="arch/arm/boot/uImage" \
+                        "$@"

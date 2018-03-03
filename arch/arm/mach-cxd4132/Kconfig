@@ -1,0 +1,115 @@
+config ARCH_CXD4132BASED
+	bool
+	select CPU_V6K
+	select IRQ_PER_CPU
+	select ARCH_FLATMEM_ENABLE
+	select ARCH_SPARSEMEM_ENABLE
+	select SPARSEMEM_STATIC
+	select ARCH_SELECT_MEMORY_MODEL
+	select ZONE_DMA
+	select HAVE_CLK
+	select COMMON_CLKDEV
+	select GENERIC_TIME
+	select GENERIC_CLOCKEVENTS
+	select ARM_AMBA
+	select AUTO_IRQ_AFFINITY if SMP
+	select EJ
+	select ARCH_HAS_PM_SUSPEND_DISK
+	select MACH_HAS_TRAP_INIT
+	select HAVE_WATCHDOG
+	select CLKDEV_LOOKUP
+
+if ARCH_CXD4132BASED
+
+menu "CXD4132 Options"
+
+config MPCORE_GIC_INIT
+	bool "Initialize Interrupt Controller"
+	default n
+
+config EXCLUSIVE_CACHE
+	bool
+	default n
+
+config CACHE_PL310S
+	bool "Enable the PL310 outer cache controller"
+	default y
+	select OUTER_CACHE
+	select EXCLUSIVE_CACHE
+	help
+         This option enables the PL310 PrimeCell.
+
+config CACHE_PL310_INIT
+	bool "Initialize PL310"
+	depends on CACHE_PL310S
+	default n
+
+config CACHE_PL310_EXCLUSIVE
+	bool "PL310 exclusive mode"
+	depends on CACHE_PL310_INIT
+	default y
+
+comment "Memory Layout"
+config CXD4132_TEXT_OFFSET
+	hex "Text offset of kernel"
+	default 0x008000
+	help
+	  kernel will be compiled at 0xC000_0000 + TEXT_OFFSET
+
+config MODULES_OFFSET
+	hex "modules start address"
+	default 0xbf000000
+
+config PGTBL_AREA_ADDRESS
+	hex "page table area virt address"
+	default 0
+
+comment "Memory config"
+
+config CXD4132_DDR_RANK0_ABSENT
+	bool "DDR RANK0 is not populated."
+	default n
+
+config CXD4132_DDR_ACCESS_DETECT
+	bool "Detect DDR access during suspend sequence"
+	default n
+	depends on (PM && DEBUG_LL)
+
+comment "Misc config"
+
+config CXD4132_USE_DEVICE_SO
+	bool "Enable the workaround by MT_DEVICE_SO"
+	default y
+
+config CXD4132_USE_MEMORY_UC
+	bool "Type of uncached memory is MT_MEMORY_UC instead of MT_DEVICE"
+	default n
+	help
+	  MT_MEMORY_UC is Uncacheable Normal Memory attribute.
+	  MT_DEVICE is Shared Device attribute.
+
+comment "Development support"
+
+config QEMU
+	bool "QEMU"
+	select EJ_DO_NOT_FREE_INIT
+	select CXD41XX_SIMPLE_LOADER
+	select CXD41XX_SIMPLE_SUSPEND
+
+source "arch/arm/mach-cxd4132/Kconfig.uart"
+source "arch/arm/mach-cxd4132/Kconfig.ether"
+
+endmenu
+
+config CXD4132_GPIO
+	bool "GPIO Driver"
+	depends on OSAL_UDIF
+	default y
+
+config MACH_HAS_TRAP_INIT
+	bool
+
+config HAVE_WATCHDOG
+	bool
+
+endif

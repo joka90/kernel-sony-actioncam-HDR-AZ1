@@ -1,0 +1,83 @@
+/*
+ * arch/arm/mach-cxd90014/include/mach/regs-misc.h
+ *
+ * MISC registers
+ *
+ * Copyright 2012 Sony Corporation
+ *
+ *  This program is free software; you can redistribute  it and/or modify it
+ *  under  the terms of  the GNU General  Public License as published by the
+ *  Free Software Foundation;  version 2 of the  License.
+ *
+ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
+ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
+ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  You should have received a copy of the  GNU General Public License along
+ *  with this program; if not, write  to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
+ *
+ */
+#ifndef __REGS_MISC_H__
+#define __REGS_MISC_H__
+
+#define MISC_TYPEID		0x00
+# define TYPEID_IDMASK		 0xff00
+# define TYPEID_CXD90014	 0x0500
+#define MISC_MODEREG		0x10
+#define MISC_FIQ		0x20
+#define MISC_DBGMODE		0x30
+#define MISC_RSTREQ		0x40
+#define MISC_GPIOINTINV		0x60
+#define MISC_GPIOINTS		0x70
+#define MISC_GPIOINTHE		0x80
+#define MISC_GPIOINTLE		0x90
+
+#define MISCREG_SET	0x04
+#define MISCREG_CLR	0x08
+
+/*----- MISC_MODEREG -----*/
+# define MISC_MODEREG_BOOT_SERIAL_IN	0x0002
+
+#define VA_MISC_MODEREG		(VA_MISC + MISC_MODEREG)
+
+/*----- MISC_FIQ -----*/
+# define MISC_FIQ_FIQ0E		0x0001
+# define MISC_FIQ_FIQ1E		0x0002
+# define MISC_FIQ_FIQ2E		0x0004
+# define MISC_FIQ_FIQ3E		0x0008
+# define MISC_FIQ_FIQE_ALL	0x000F
+
+#define VA_MISC_FIQ		(VA_MISC + MISC_FIQ)
+
+/*----- MISC_DBGMODE -----*/
+# define MISC_DBGMODE_DBGMODE	0x0001
+
+#define VA_MISC_DBGMODE		(VA_MISC + MISC_DBGMODE)
+
+/*----- MISC_RSTREQ -----*/
+# define MISC_RSTREQ_CPUCLR	0x100
+# define MISC_RSTREQ_EN		0x010
+# define MISC_RSTREQ_ASSERT	0x001
+#define MISC_RSTREQ_SET  0x0044
+#define MISC_RSTREQ_CLR  0x0048
+#define MISC_RSTREQ_STAT 0x0050
+# define MISC_RSTREQ_ST_TIM	0x10
+# define MISC_RSTREQ_ST_CPU3	0x08
+# define MISC_RSTREQ_ST_CPU2	0x04
+# define MISC_RSTREQ_ST_CPU1	0x02
+# define MISC_RSTREQ_ST_CPU0	0x01
+
+#define VA_MISC_RSTREQ		(VA_MISC + MISC_RSTREQ)
+#define VA_MISC_RSTREQ_SET	(VA_MISC + MISC_RSTREQ_SET)
+#define VA_MISC_RSTREQ_CLR	(VA_MISC + MISC_RSTREQ_CLR)
+#define VA_MISC_RSTREQ_STAT	(VA_MISC + MISC_RSTREQ_STAT)
+
+#endif /* __REGS_MISC_H__ */

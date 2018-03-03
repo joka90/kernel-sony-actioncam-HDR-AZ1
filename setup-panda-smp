@@ -1,0 +1,11 @@
+#!/bin/sh
+
+scripts/setup_common.py --full-name="TI Panda ARM-A9(SMP)" \
+                        --cross-compile="arm-sony-linux-gnueabi-dev-" \
+                        --arch-name="arm" \
+                        --target-name="panda" \
+                        --fixup-kernel-headers="scripts/kernel_headers/default.fixup" \
+                        --defconfig-base="arch/arm/configs/omap2plus_defconfig" \
+                        --build-instruction="make" \
+                        --image="arch/arm/boot/uImage" \
+                        "$@"

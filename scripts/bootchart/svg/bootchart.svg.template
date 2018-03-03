@@ -1,0 +1,166 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+
+<!-- Dimension -->
+<svg {svg_width} xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<style type="text/css"><![CDATA[
+			/* Style sheet */
+			{svg_css_file}
+		]]></style>
+	</defs>
+
+	<rect x="0" y="0" width="100%" height="100%" class="Back"/>
+
+	<!-- Header text -->
+	<text class="Title" x="10" y="22">{title_name}</text>
+	<g class="Header" transform="translate(10, 24)">
+		<!-- System information -->
+		<text dy="1.2em">{system_uname}</text>
+		<!-- OS information -->
+		<text dy="2.4em">{system_release}</text>
+		<!-- CPU information  -->
+		<text dy="3.6em">{system_cpu}</text>
+		<!-- Kernel cmdline -->
+		<text dy="4.8em">{system_kernel_options}</text>
+		<!-- Sample period -->
+		<text dy="6.0em">{sample_period}</text>
+		<!-- Boot time -->
+		<text dy="7.2em">{system_boottime_sec}</text>
+	</g>
+
+	<!-- CPU load chart -->
+	<g transform="translate(10, 140)" style="fill: none;">
+		<g transform="translate(0, -5)">
+			<rect x="2px" y="-17px" width="10px" height="10px" class="USR"/><text class="LegendText" dx="15px" dy="-7px">CPU (user)</text>
+			<rect x="120px" y="-17px" width="10px" height="10px" class="SYS"/><text class="LegendText" dx="135px" dy="-7px">CPU (sys)</text>
+			<rect x="240px" y="-17px" width="10px" height="10px" class="IO"/><text class="LegendText" dx="255px" dy="-7px">I/O (wait)</text>
+		</g>
+
+		<rect class="PerfChart" x="0" y="0" width="100%" height="50px"/>
+		<g class="Tick" transform="translate(0.5, 0.5)">
+			<!-- CPU/IO load time ticks -->
+			{cpuload_ticks}
+		</g>
+		<!-- IO chart -->
+		<polyline class="IO" points="{cpuload_io}"/>
+		<!-- CPU load chart -->
+		<polyline class="USR" points="{cpuload_usr}"/>
+		<polyline class="SYS" points="{cpuload_sys}"/>
+
+	</g>
+
+	<!-- Disk utilization chart -->
+	<g transform="translate(10, 220)" style="fill: none;">
+		<g transform="translate(0, -5)">
+			<line x1="1px" y1="-12px" x2="13px" y2="-12px" class="DiskTPut"/><circle class="DiskTPut" cx="7" cy="-12" r="2"/><text class="LegendText" dx="15px" dy="-7px">Disk throughput</text>
+			<rect x="120px" y="-17px" width="10px" height="10px" class="DiskUtil"/><text class="LegendText" dx="135px" dy="-7px">Disk utilization</text>
+			<!--<line x1="120px" y1="-12px" x2="132px" y2="-12px" class="FileOpen"/><circle class="FileOpen" cx="127" cy="-12" r="2"/><text class="LegendText" dx="135px" dy="-7px">Files opened</text>-->
+		</g>
+
+		<rect class="PerfChart" x="0" y="0" width="100%" height="50px"/>
+		<g class="Tick" transform="translate(0.5, 0.5)">
+			<!-- Disk utilization time ticks -->
+			{disk_ticks}
+		</g>
+		<!-- Disk utilization chart -->
+		<polyline class="DiskUtil" points="{disk_utilization}"/>
+
+		<g class="DiskTPut">
+			<!-- Disk throughput chart -->
+			{disk_throughput}
+		</g>
+
+		<g class="FileOpen">
+			<!-- Files opened chart -->
+			{disk_file_opened}
+		</g>
+
+	</g>
+
+	<!-- Interrupt / context switch chart -->
+	<g transform="translate(10, 300)" style="fill: none;">
+		<g transform="translate(0, -5)">
+			<line x1="1px" y1="-12px" x2="13px" y2="-12px" class="Interrupt"/><circle class="Interrupt" cx="7" cy="-12" r="2"/><text class="LegendText" dx="15px" dy="-7px">Interrupts(Total)</text>
+			<line x1="120px" y1="-12px" x2="133px" y2="-12px" class="ContextSw"/><circle class="ContextSw" cx="127" cy="-12" r="2"/><text class="LegendText" dx="135px" dy="-7px">ContextSwitch</text>
+			<line x1="240px" y1="-12px" x2="253px" y2="-12px" class="ProcCreate"/><circle class="ProcCreate" cx="247" cy="-12" r="2"/><text class="LegendText" dx="255px" dy="-7px">ProcessesCreated</text>
+		</g>
+
+		<rect class="PerfChart" x="0" y="0" width="100%" height="50px"/>
+		<g class="Tick" transform="translate(0.5, 0.5)">
+			<!-- Same as CPU/IO load time ticks -->
+			{cpuload_ticks}
+		</g>
+
+                <!-- Interrupt chart -->
+  		<polyline class="Interrupt" points="{interrupt_points}"/>
+
+		<g class="Interrupt">
+			<!-- Interrupt max point -->
+			{interrupt_max}
+		</g>
+
+                <!-- ContextSwitch chart -->
+  		<polyline class="ContextSw" points="{contextsw_points}"/>
+
+		<g class="ContextSw">
+			<!-- ContextSwitch max point -->
+			{contextsw_max}
+		</g>
+
+                <!-- ProcCreate chart -->
+  		<polyline class="ProcCreate" points="{processcreate_points}"/>
+
+		<g class="ProcCreate">
+			<!-- ProcCreate max point -->
+			{processcreate_max}
+		</g>
+
+	</g>
+
+	<!-- Interrupt / context switch chart -->
+	<g transform="translate(10, 390)" style="fill: none;">
+		<g transform="translate(0, -5)">
+			<line x1="1px" y1="-12px" x2="13px" y2="-12px" class="IntrCtxt"/><circle class="IntrCtxt" cx="7" cy="-12" r="2"/><text class="LegendText" dx="15px" dy="-7px">Time spent in Interrupts(Total)</text>
+		</g>
+
+		<rect class="PerfChart" x="0" y="0" width="100%" height="50px"/>
+		<g class="Tick" transform="translate(0.5, 0.5)">
+			<!-- Same as CPU/IO load time ticks -->
+			{cpuload_ticks}
+		</g>
+
+                <!-- Time spent in interrupt context chart -->
+  		<polyline class="IntrCtxt" points="{intrctxt_points}"/>
+
+		<g class="IntrCtxt">
+			<!-- Interrupt context max point -->
+			{intrctxt_max}
+		</g>
+
+	</g>
+
+	<!-- Process dependency chart -->
+	<g transform="translate(10, 480)" style="fill: none;">
+		<g transform="translate(0, -30)">
+		    <!--<rect class="LegendBack" x="0px" y="0px" width="480px" height="16px"/>-->
+			<rect x="2" y="3" width="10px" height="10px" class="Running"/><text class="LegendText" dx="15px" dy="1em">Running (%cpu)</text>
+			<rect x="120" y="3" width="10px" height="10px" class="UnintSleep"/><text class="LegendText" dx="135px" dy="1em">Unint.sleep (I/O)</text>
+			<rect x="240" y="3" width="10px" height="10px" class="Sleeping"/><text class="LegendText" dx="255px" dy="1em">Sleeping</text>
+			<rect x="360" y="3" width="10px" height="10px" class="Zombie"/><text class="LegendText" dx="375px" dy="1em">Zombie</text>
+		</g>
+
+		<!-- Process axis labels -->
+		{process_axis}
+		<rect class="ProcessTree" x="0" y="0" width="100%" height="95%"/>
+		<g class="Tick" transform="translate(0.5, 0.5)">
+			<!-- Process time ticks and delimiter lines -->
+			{process_ticks}
+		</g>
+
+		<!-- Process chart -->
+		{process_tree}
+	</g>
+
+	<!--<text x="0" y="100%" dx="5" dy="-5" class="Signature">www.bootchart.org</text>-->
+</svg>

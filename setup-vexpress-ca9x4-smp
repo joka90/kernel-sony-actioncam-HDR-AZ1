@@ -1,0 +1,15 @@
+#!/bin/sh
+
+export VXP_FULLNAME="${VXP_FULLNAME:-Versatile Express CA9x4 (SMP)}"
+export VXP_TARGETNAME="${VXP_TARGETNAME:-vxp-ca9x4-smp}"
+
+scripts/setup_common.py --full-name="${VXP_FULLNAME}" \
+                        --cross-compile="arm-sony-linux-gnueabi-dev-" \
+                        --arch-name="arm" \
+                        --target-name="${VXP_TARGETNAME}" \
+                        --fixup-kernel-headers="scripts/kernel_headers/default.fixup" \
+                        --defconfig-base="arch/arm/configs/vexpress-ca9x4-smp_defconfig" \
+                        --build-instruction="make" \
+                        --image="vmlinux.bin" \
+			"ssfat"			\
+                        "$@"

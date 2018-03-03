@@ -1,0 +1,11 @@
+#!/bin/sh
+
+scripts/setup_common.py --full-name="ARM RealView/EB MPCore (SMP)" \
+                        --cross-compile="arm-sony-linux-gnueabi-dev-" \
+                        --arch-name="arm" \
+                        --target-name="realview-eb-smp" \
+                        --fixup-kernel-headers="scripts/kernel_headers/default.fixup" \
+                        --defconfig-base="arch/arm/configs/realview-eb-smp_defconfig" \
+                        --build-instruction="make" \
+                        --image="arch/arm/boot/uImage" \
+                        "$@"

@@ -1,0 +1,53 @@
+config SNSC_VUART
+	bool "UART multiplexing support"
+	default n
+	depends on SNSC
+	help
+	  UART multiplexing support
+	  If "Y", register a virtual UART for multiplexing.
+	  Four sub-configurations should be correctly set to support
+	  this feature.
+
+config SNSC_VUART_MAJOR_NUM
+	int "VUART major number"
+	range 0 255
+	default 204
+	depends on SNSC_VUART
+	help
+	  VUART major number.
+  	  Please use an available number as major number.
+  	  For instance,
+  	  If 204 is set, virtual UART device major number will be 204.
+
+config SNSC_VUART_MINOR_NUM
+	int "VUART minor number"
+	range 0 255
+	default 240
+	depends on SNSC_VUART
+	help
+	  VUART minor number.
+	  Please use an available number as minor number.
+	  For instance,
+	  If 240 is set, virtual UART device minor number will be 240.
+
+config SNSC_VUART_NR_UARTS
+	int "VUART device number"
+	range 0 255
+	default 4
+	depends on SNSC_VUART
+	help
+	  VUART device number.
+	  Please set a correct device number.
+	  For instance,
+	  If 4 is set, 4 ports of virtual UART device will be registed.
+
+config SNSC_VUART_CONSOLE
+	string "VUART multiplexed console name"
+	default "ttyAM0"
+	depends on SNSC_VUART
+	help
+	  VUART multiplexing console name.
+	  This configuration should be set exactly as which console
+	  will be multiplexed.
+	  For instance,
+	  For most KZM9D boards, ttyS1 should be set.

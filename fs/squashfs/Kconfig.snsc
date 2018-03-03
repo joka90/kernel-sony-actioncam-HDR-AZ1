@@ -1,0 +1,14 @@
+#
+# SNSC related configurations
+#
+
+config SNSC_FS_SQUASHFS_SB_MIN_BLOCKSIZE
+	bool "Change block size for sb_min_blocksize()"
+	depends on SNSC
+	depends on SQUASHFS
+	default n
+
+config SNSC_FS_SQUASHFS_SB_MIN_BLOCKSIZE_VALUE
+	int "block size (in bytes) for sb_min_blocksize()"
+	depends on SNSC_FS_SQUASHFS_SB_MIN_BLOCKSIZE
+	default 4096

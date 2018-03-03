@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export KZMA9_FULLNAME="${KZMA9_FULLNAME:-Sony KZM-A9 (UP)}"
+
+./setup-kzm-a9-smp up "ssfat" \
+                    "$@"

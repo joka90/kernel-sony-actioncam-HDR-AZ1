@@ -1,0 +1,112 @@
+menu "SNSC Configurations"
+
+comment "SNSC debug options"
+	depends on SNSC
+
+config SNSC_PRINTK_WATCHDOG
+	bool "watchdog to flush output if printk called with IRQs disabled"
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	default y
+	help
+	  For PREEMPT_RT_FULL, when printk() is called with preemption or IRQs
+	  disabled the output is buffered, but the console driver is not
+	  called.  The buffered output will be printed later when a call to
+	  printk() is made with preemption and IRQs enabled.
+
+	  This option creates a watchdog that will periodically check for
+	  buffered output and attempt to flush it.
+
+	  The watchdog thread will be created when the watchdog delay time
+	  is set to a non-zero value.  The watchdog thread will be terminated
+	  when the watchdog delay time is set to zero.  To set the watchdog
+	  delay time either specify printk_watchdog_sec=DELAY on the kernel
+	  command line or:
+
+	    echo DELAY > /proc/sys/kernel/printk_watchdog_sec
+
+	  where DELAY is an integer number of seconds.
+
+config SNSC_FORCE_RCU_STALL_PRINTK
+	bool "force printk to console from RCU stall detection"
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on TREE_RCU || TREE_PREEMPT_RCU
+	default n
+	help
+	  THIS FEATURE IS FRAGILE AND SHOULD NOT BE ENABLED ON A PRODUCTION
+	  SYSTEM.  Use this feature for testing and debugging only.
+
+	  THIS FEATURE SHOULD BE USED AS A LAST RESORT FOR DEBUGGING.  Try
+	  enabling CONFIG_SNSC_PRINTK_WATCHDOG instead.
+
+	  When first trying this feature on a new kernel version or a new
+	  platform, it is highly recommended to stress test this feature
+	  via the CONFIG_SNSC_DEBUG_PRINT_RCU_STALL option.
+
+	  With CONFIG_PREEMPT_RT_FULL on ARM, output to console from printk()
+	  in IRQ context is delayed until a later printk() occurs.  The RCU
+	  stall warning printk()s are in IRQ context.  This option will force
+	  the printk()s to be flushed to the console immediately in IRQ context.
+
+	  To enable the feature either specify snsc_force_cpu_stall_printk on
+	  the kernel command line or:
+
+	    echo 1 > /proc/sys/kernel/snsc_force_rcu_stall_printk
+
+	  To disable the feature:
+
+	    echo 0 > /proc/sys/kernel/snsc_force_rcu_stall_printk
+
+config SNSC_FORCE_SOFTLOCKUP_PRINTK
+	bool "force printk to console from watchdog softlockup detection"
+	depends on SNSC
+	depends on PREEMPT_RT_FULL
+	depends on LOCKUP_DETECTOR
+	default n
+	help
+	  THIS FEATURE IS FRAGILE AND SHOULD NOT BE ENABLED ON A PRODUCTION
+	  SYSTEM.  Use this feature for testing and debugging only.
+
+	  THIS FEATURE SHOULD BE USED AS A LAST RESORT FOR DEBUGGING.  Try
+	  enabling CONFIG_SNSC_PRINTK_WATCHDOG instead.  There are some limits
+	  to the printk watchdog (CONFIG_SNSC_PRINTK_WATCHDOG).  The printk
+	  watchdog will not trigger if ALL cpus are locked up in IRQ context
+	  (such as an infinite loop in an IRQ handler).  The printk watchdog
+	  will not trigger if ALL cpus are locked up in processes running at
+	  a higher priority than the printk watchdog thread.  This issue can
+	  possibly be resolved by changing the scheduling class of the printk
+	  watchdog (named "[printkdogd]") to SCHED_RR or SCHED_FIFO and the
+	  priority of the printk watchdog to higher than the process that is
+	  causing the lockup.  Any timer IRQ thread and timer kernel thread
+	  required to wake the printk watchdog also have to have a scheduling
+	  class and priority higher than the process that is causing the lockup.
+
+	  Another possible alternative to this feature is
+	  CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC, which will cause a panic when
+	  the softlockup is detected.  The panic will in turn allow the
+	  buffered softlockup messages to print on the console.  However, this
+	  may not be a good alternative because it is likely that some of the
+	  softlockup messages will have not been printed yet from other cpus,
+	  so some information will be lost.
+
+	  When first trying this feature on a new kernel version or a new
+	  platform, it is highly recommended to stress test this feature
+	  via the CONFIG_SNSC_DEBUG_PRINT_SOFTLOCKUP option.
+
+	  With CONFIG_PREEMPT_RT_FULL on ARM, output to console from printk()
+	  in IRQ context is delayed until a later printk() occurs.  The
+	  watchdog softlockup warning printk()s are in IRQ context.  This
+	  option will force the printk()s to be flushed to the console
+	  immediately in IRQ context.
+
+	  To enable the feature either specify snsc_force_softlockup_printk on
+	  the kernel command line or:
+
+	    echo 1 > /proc/sys/kernel/snsc_force_softlockup_printk
+
+	  To disable the feature:
+
+	    echo 0 > /proc/sys/kernel/snsc_force_softlockup_printk
+
+endmenu

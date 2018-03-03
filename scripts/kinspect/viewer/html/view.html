@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<html>
+	<head>
+	<title>Kinspect Viewer</title>
+		<!-- cross site file works. from here -->
+		<style type="text/css">
+		@import	"http://o.aolcdn.com/dojo/1.0.2/dijit/themes/tundra/tundra.css";
+		@import "http://o.aolcdn.com/dojo/1.0.2/dojo/dojo.css"
+		</style>
+		<script type="text/javascript"
+			src="http://o.aolcdn.com/dojo/1.0.2/dojo/dojo.xd.js"
+			djConfig="parseOnLoad: true, isDebug: false"></script>
+		<!-- See http://trac.dojotoolkit.org/ticket/4462 for below-->
+		<script type="text/javascript"
+			src="http://o.aolcdn.com/dojo/1.0.2/dojox/gfx.js"</script>
+		<!-- cross site file works. to here -->
+		<!-- Local file works. from here-->
+		<!--
+		<style type="text/css">
+		@import "dojo-release-1.0.2/dijit/themes/tundra/tundra.css";
+		@import "dojo-release-1.0.2/dojo/dojo.css"
+		</style>
+		<script type="text/javascript"
+			src="dojo-release-1.0.2/dojo/dojo.js"
+			djConfig="parseOnLoad: true, isDebug: false"></script>
+		-->
+		<!-- Local file works. to here-->
+
+		<script type="text/javascript">
+		dojo.require("dojo.parser");
+		dojo.require("dijit.form.Button");
+		dojo.require("dijit.form.TextBox");
+		dojo.require("dijit.TitlePane");
+		dojo.require("dijit.layout.ContentPane");
+		dojo.require("dijit.layout.TabContainer");
+		dojo.require("dijit.layout.SplitContainer");
+		dojo.require("dijit.layout.LinkPane");
+		dojo.require("dijit.form.CheckBox");
+		dojo.require("dojo.data.ItemFileReadStore");
+		dojo.require("dijit.form.ComboBox");
+		dojo.require("dojox.lang.functional");
+		dojo.require("dojox.charting.Theme");
+		dojo.require("dojox.charting.scaler");
+		dojo.require("dojox.charting.Chart2D");
+		dojo.require("dojox.charting.themes.PlotKit.red");
+		dojo.require("dojox.gfx");
+		dojo.require("dojo.string");
+		console.debug("load done");
+		</script>
+
+		<script type="text/javascript" src="kipct_dojo.js"></script>
+		<style>
+			#chartCpu, #chartMem, #chartCtxt, #chartPrcs{
+				margin:0px;
+				width:900px;
+				height:170px;
+				background-color:#dedeed;
+			}
+			.dojoTabPane {
+			padding : 10px 10px 10px 10px;
+			overflow: auto;
+			}
+			.textCenter {
+			text-align: center;
+			}
+		</style>
+	</head>
+	<body class="tundra">
+        <div dojoType="dijit.layout.SplitContainer"
+             orientation="vertical"
+             activeSizing="true"
+             style="border: 1px solid #bfbfbf; width: 100%; height: 1200px;">
+	     <div dojoType="dijit.layout.ContentPane" sizeMin="20"
+	          sizeShare="50">
+		  <div dojoType="dijit.layout.SplitContainer"
+		  orientation="horizontal"
+		  activeSizing="true"
+		  style="border: 1px solid #bfbfbf; width: 99%; height: 200px;">
+
+		      <div dojoType="dijit.layout.ContentPane" sizeMin="0" sizeShare="50" style="background-color:lightblue;">
+		      <table><tr><td>
+		      <form  method="GET" id="form2" action="#">
+		          <div dojoType="dojo.data.ItemFileReadStore"
+			  jsId="stateStore" url="kipct.cgi?name=getLogDir">
+			  </div>
+			  <input dojoType="dijit.form.ComboBox" value=""
+			  onChange="logdirChanged" searchAttr="name"
+			  store="stateStore" name="logdir" id="logdir"
+			  style="margin-top:10px;width: 300px;">
+		      </form></td>
+                      <td>
+		      <button dojoType="dijit.form.Button"
+			      id="updateComboButton" style="margin-top:-5px">ListUpdate</button></td>
+                      </tr></table>
+                      <form  method="GET" id="form1" action="#">
+			  <input type="checkbox" name="cpuChk" id="cpuChk"
+			  dojoType="dijit.form.CheckBox" checked="checked"/>
+			  <label for="cpuChk">CPU</label>
+			  <br>
+			  <input type="checkbox" name="ctxtChk" id="ctxtChk"
+			  dojoType="dijit.form.CheckBox" checked="checked"/>
+			  <label for="ctxtChk">Interrupt/ContextSwitch</label>
+			  <br>
+			  <input type="checkbox" name="prcsChk" id="prcsChk"
+			  dojoType="dijit.form.CheckBox" checked="checked"/>
+			  <label for="prcsChk">Prcesses</label>
+			  <br>
+			  <input type="checkbox" name="memChk" id="memChk"
+			  dojoType="dijit.form.CheckBox" checked="checked"/>
+			  <label for="memChk">MemInfo</label>
+			  <br>
+		      </form>
+		      <button dojoType="dijit.form.Button"
+		      id="startTimerButton">TimerStart</button>
+		      <button dojoType="dijit.form.Button"
+		      id="stopTimerButton" disabled="true">TimerStop</button>
+		      </div>
+
+		      <div dojoType="dijit.layout.ContentPane" sizeMin="20"
+		      sizeShare="50">
+		          <div id="mainTab" dojoType="dijit.layout.TabContainer"
+			  style="width: 100%; height: 20em;">
+			  <div id="targetInfoCP" dojoType="dijit.layout.ContentPane"
+		  href="kipct.cgi?name=dummy" title="Target Info"
+		  selected="true" refreshOnShow="false">
+		          </div>
+			  <div dojoType="dijit.layout.ContentPane"
+		  href="kipct.cgi?name=dummy" id="FilesCP" title="Files">
+		          </div>
+		      </div>
+		  </div>
+	     </div>
+             <div dojoType="dijit.layout.ContentPane" sizeMin="20"
+	     sizeShare="50">
+		  <div id="cpuChart">
+		    <table>
+                      <tr><td></td></td><td></td></tr>
+                      <tr><td></td><td><div id="chartCpu"></div></td><td><div id="cpuLegend" style="width: 170px; height: 170px;"></div></td></tr>
+                      <tr><td></td><td class="textCenter"><span id="cpuTitle"></span></td><td></td></tr>
+		    </table>
+		  </div>
+		  <HR>
+		  <div id="ctxtChart">
+		    <table>
+                      <tr><td></td></td><td></td></tr>
+                      <tr><td></td><td><div id="chartCtxt"></div></td><td><div id="ctxtLegend" style="width: 170px; height: 170px;"></div></td></tr>
+                      <tr><td></td><td class="textCenter"><span id="ctxtTitle"></span></td><td></td></tr>
+		    </table>
+		  </div>
+		  <HR>
+		  <div id="prcsChart">
+		    <table>
+                      <tr><td></td></td><td></td></tr>
+                      <tr><td></td><td><div id="chartPrcs"></div></td><td><div id="prcsLegend" style="width: 170px; height: 170px;"></div></td></tr>
+                      <tr><td></td><td class="textCenter"><span id="prcsTitle"></span></td><td></td></tr>
+		    </table>
+		  </div>
+		  <HR>
+		  <div id="memChart">
+		    <table>
+                      <tr><td></td></td><td></td></tr>
+                      <tr><td></td><td><div id="chartMem"></div></td><td><div id="memLegend" style="width: 170px; height: 170px;"></div></td></tr>
+                      <tr><td></td><td class="textCenter"><span id="memTitle"></span></td><td></td></tr>
+		    </table>
+		  </div>
+		  <HR>
+             </div>
+    </div>
+	</body>
+</html>

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export VXP_FULLNAME="${VXP_FULLNAME:-Versatile Express CA5x2 (UP)}"
+export VXP_TARGETNAME="${VXP_TARGETNAME:-vxp-ca5x2}"
+
+./setup-vexpress-ca5x2-smp up "$@"

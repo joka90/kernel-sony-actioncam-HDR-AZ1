@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+scripts/setconfig.py -f - <<_EOF_
+CONFIG_IKCONFIG=y
+CONFIG_IKCONFIG_PROC=y
+_EOF_

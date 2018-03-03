@@ -1,0 +1,7 @@
+config CXD90014_SMC911X_INT
+	int "SMC911X: IRQ#"
+	default 3
+
+config CXD90014_SRAMC_CSMASK_ERRATA
+	bool "SRAMC CS Mask ERRATA"
+	default y

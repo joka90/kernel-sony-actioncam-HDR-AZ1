@@ -1,0 +1,154 @@
+This Document explains about testing stack usage
+features in CELinux:
+
+stack_size tool
+===============
+
+ It compare the numbers returned from checkstack-all.pl and stack_size
+ and CONFIG_FRAME_WARN, with the numbers from CONFIG_STACK_TRACER to
+ see if checkstack-all.pl has correct numbers or not.
+
+Description:
+------------
+
+ The test program and some supporting scripts are present in the
+ tools/stack_size directory.
+
+ The scripts are:
+  check_static_stack_usage.sh
+  checkstack-all.pl
+  columnize.py
+  joinlines.py
+  stack_size
+
+File descriptions:
+------------------
+
+ * checkstack-all.pl is based on checkstack.pl (which is a tool
+   already in mainline for reporting the stack size of each function
+   in the kernel).  However, checkstack-all.pl differs from
+   checkstack.pl in that it has the lower limits removed, so that no
+   functions are filtered out.
+
+ * joinlines.py and columnize.py are helper scripts for joining lines
+   and columnizing the final output
+
+ * stack_size is a new program, which also collects information about
+   the static stack size for functions in the linux kernel.  It does
+   this (like checkstack.pl and checkstack-all.pl) by scanning the
+   dissassembly for vmlinux, looking at the instructions that comprise
+   the function prefix for each routine. 'stack_size' has more
+   accurate stack usage calculations than that other tools, but
+   currently only works on ARM.
+
+ * wrote check_static_stack_usage.sh script.
+
+Steps:
+
+ 1. Set up a 'ttc' environment to run the tests in
+   $ ttc <target> setenv
+
+ Note that the test uses ttc for several operations, so ttc options
+ like 'kinstall', 'reboot', and 'run' need to work for your target
+ for this test to succeed.
+
+ 2. Turn on the stack tracer config option: CONFIG_STACK_TRACER=y
+
+ 3. Compile the kernel
+
+ 4. Install the kernel
+
+ 5. Execute the test
+   $ sh scripts/check_static_stack_usage.sh
+
+This program does the following:
+
+ * get report of functions and stack sizes from checkstack-all.pl
+
+ * get report of functions and stack sizes from CONFIG_FRAME_WARN
+
+ * get report from stack_size
+
+ * get report of functions and stack sizes from CONFIG_STACK_TRACER
+   (for a single 'deepest' function seen by the stack tracer)
+
+ * combines all 4 reports into a single report for comparison of
+   the stack size reported by the different methods.
+
+This will produce several intermediate files and a final report file
+named stackusage.txt, in the current directory.
+
+ 6. Analyze the results
+
+The format for report is multiple lines of the format:
+  <function> (<source>) <size>
+
+where source is one of:
+ stack_trace
+ stack_size
+ frame_warn
+ checkstack-all.pl
+
+ex: do_exit (checkstack-all.pl) 20
+
+ For each function in the kernel, the report should have multiple
+ entries indicating the size that each stack usage feature reported
+ for that function.  Only a few functions will have reports from all 4
+ sources.  The main limitation is that the stack tracer will only have
+ functions listed for the one deepest backtrace that it caught at
+ runtime.  The stack tracer is considered to have the most accurate
+ stack size numbers.  Numbers that are less than this are considered
+ incorrect.
+
+ Compare symbol sizes by opening the stackusage.txt file in an editor
+ and examining the different sizes for the functions listed.  Search
+ for items with a 'stack_trace' source, to see how the runtime stack
+ size compares to the compile-time and static stack size analyzers.
+
+Here are some sample functions from my testing:
+-----------------------------------------------
+
+__do_softirq                   (checkstack-all.pl)    20
+__do_softirq                   (frame_warn)           8
+__do_softirq                   (stack_size)           64
+__do_softirq                   (stack_trace)          64
+...
+do_select                      (checkstack-all.pl)    724
+do_select                      (frame_warn)           720
+do_select                      (stack_size)           768
+do_select                      (stack_trace)          768
+...
+handle_IRQ                     (stack_size)           28
+handle_IRQ                     (stack_trace)          24
+...
+
+ If the stack size for a static analyzer is different from the number
+ reported by the stack tracer, it is considered incorrect.
+
+In general:
+
+ * checkstack-all.pl does not consider pushes and pops, and so reports
+   stack sizes that are less than what functions really use
+
+ * The frame warning (stack usage number from the compiler) seems to
+   under-report the frame size (and not include the pushes and pops).
+
+ * stack_size does consider pushes and pops, and so reports more
+   correct stack sizes.  Occasionally, it overrupts the stack size
+   (see handle_IRQ).  I'm not sure what causes this.
+
+ * stack trace reports numbers measured by the function tracer at
+   runtime
+
+Implementation details:
+-----------------------
+
+See the source: check_static_stack_usage.sh
+
+ * It uses 'make uImage' for the FRAME_WARN test instead of 'ttc
+   kbuild' because a kbuild might use parallized make, which messes up
+   the output file
+
+ * The checkstack-all.pl and stack_size tests use vmlinux in the
+   KBUILD_OUTPUT directory (so the kernel must be built before the
+   test is run).

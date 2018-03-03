@@ -1,0 +1,147 @@
+.Back {
+	fill: white;
+}
+.Title {
+	font-family: sans-serif;
+	font-size: 14pt;
+	font-weight: bold;
+}
+.Header {
+	font-family: sans-serif;
+	font-size: 9pt;
+	fill: #000000;
+}
+.LegendText {
+	font-family: sans-serif;
+	font-size: 9pt;
+	fill: #000000;
+}
+.PerfChart {
+	fill: #ffffff;
+	stroke: #e0e0e0;
+}
+.Tick {
+	stroke: #e6e6e6;
+	stroke-width: 1px;
+}
+.AxisLabel {
+	font-family: sans-serif;
+	font-size: 9pt;
+	fill: #000000;
+	opacity: 0.7;
+}
+.LegendBack {
+	stroke: #e0e0e0;
+	fill: #f5f5f5;
+}
+.Bold {
+	stroke: #d0d0d0;
+}
+
+.CPU {
+	fill-opacity: 0.25;
+	fill: #668cb2;
+	stroke: #668cb2;
+}
+.IO {
+	fill-opacity: 0.25;
+	fill: #c27a7a;
+	stroke: #c27a7a;
+}
+.USR {
+	fill-opacity: 0.25;
+	fill:   #6db266;
+	stroke: #6db266;
+}
+.SYS {
+	fill-opacity: 0.5;
+	fill:   #66b2b0;
+	stroke: #66b2b0;
+}
+.DiskUtil {
+	fill-opacity: 0.5;
+	fill: #c86464;
+	stroke: #c86464;
+}
+.DiskTPut {
+	stroke: #32b432;
+	fill-opacity: 0;
+}
+.FileOpen {
+	stroke: #32b432;
+	fill-opacity: 0;
+}
+.DiskLabel {
+	font-family: sans-serif;
+	font-size: 9pt;
+	opacity: 0.5;
+}
+.Interrupt {
+	stroke: #B44A32;
+	fill-opacity: 0.5;
+}
+.ContextSw {
+	stroke: #5432B4;
+	fill-opacity: 0.5;
+}
+.ProcCreate {
+	stroke: #32B4AD;
+	fill-opacity: 0.5;
+}
+.IntrCtxt {
+	stroke: #77B4AD;
+	fill-opacity: 0.5;
+}
+
+.ProcessTree {
+	fill: #ffffff;
+	stroke: #e0e0e0;
+	padding: 10px;
+}
+.Process {
+	stroke: #668cb2;
+	fill: none;
+}
+.ProcessStatus {
+	stroke: none;
+}
+.Sleeping {
+	fill: #f0f0f0;
+	fill-opacity: 0.25;
+}
+.Running {
+	fill: #668cb2;
+	fill-opacity: 0.25;
+}
+.UnintSleep {
+	fill: #c27a7a;
+	fill-opacity: 0.25;
+}
+.Traced {
+	fill: #f08080;
+}
+.Zombie {
+	fill: #787878;
+}
+.Legend {
+	stroke: #808080;
+}
+.ProcessLabel {
+	font-family: sans-serif;
+	font-size: 9pt;
+	fill: #000000;
+}
+
+.Connector {
+	stroke: #668cb2;
+	stroke-width: 1px;
+	stroke-offset: 0;
+	stroke-dasharray: 3,3;
+}
+
+.Signature {
+	font-family: sans-serif;
+	font-size: 11pt;
+	fill: #000000;
+	opacity: 0.4;
+}

@@ -1,0 +1,26 @@
+#
+# OSAL UDM configuration
+#
+
+menuconfig OSAL_UDIF
+	tristate  "OSAL UDM Support"
+	depends on !CXD4115_COMPAT
+	default n
+	help
+	  "OS abstraction layer, for Unified Driver Module (I/F)"
+
+if OSAL_UDIF
+
+config OSAL_UDIF_THREAD
+	bool "Registing drivers works on each kernel thread"
+	default y
+
+config OSAL_UDIF_BDEV_THREAD
+	bool "Enable the thread for bdev request operation"
+	default y
+
+config OSAL_UDIF_ERROR_PRINT
+	bool "Enable to print when error is detected"
+	default y
+
+endif

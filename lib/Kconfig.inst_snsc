@@ -1,0 +1,258 @@
+comment "SNSC instrumentation options"
+	depends on SNSC
+
+config SNSC_PAGES_ACCOUNTING
+       default n
+       bool "Enable accounting of alloc_pages related"
+       depends on SNSC
+       help
+         This option records alloc_pages activity and reports it via
+	 /proc/pages.
+
+config SNSC_PAGES_ACCOUNTING_DEBUG
+       bool "show debug info about pages accounting"
+       depends on SNSC && SNSC_PAGES_ACCOUNTING
+       default n
+       help
+         If y, print debug message when an orphant dealloc is found
+	 by pages accounting.
+
+config SNSC_DEBUG_PROFILE
+       bool "Debug/Profiling function support"
+       depends on SNSC
+       default n
+       help
+		Writing profile to /proc/profile_record by
+		calling profile_record() and profile_record_p().
+		Writing a string to /proc/sched_clock
+		will be recorded as the string (max 15 chars)
+		and the time written.
+		So faster than printk with time information.
+		Delay is aprox. 20~30ms/100entry(depends on arch).
+		To read records, cat /proc/profile_record later.
+
+config SNSC_DEBUG_PROFILE_RECORDS_NUM
+	int  "Number of debug profile records"
+	default 256
+	depends on (SNSC_DEBUG_PROFILE)
+	help
+		RAM needed: 36bytes/record.
+		  9KB for   256 entries.
+		 36KB for  1024 entries.
+		421KB for 12000 entries.
+
+config SNSC_DEBUG_PROFILE_RINGBUFF
+	bool "Debug profile ring buffer mode"
+	depends on (SNSC_DEBUG_PROFILE)
+	default y
+	help
+		If this is set to No, write to /proc/profile_record over
+		max number of records will be discarded.
+		This option will enables wrapping to begining of records
+		and overrides old records.
+
+config SNSC_DEBUG_PROFILE_HEAP
+	bool "Heap usage profiling support"
+	depends on SNSC
+	default n
+	help
+	  Memory usage profile support. The system memory states
+	  and the timestamp when kernel calling functions
+	  __vm_enough_memory() and try_to_freepages() will be
+	  recorded to /proc/profile_heap.
+
+config SNSC_DEBUG_PROFILE_HEAP_RINGBUFF
+	bool "Heap profile ring buffer mode"
+	depends on SNSC_DEBUG_PROFILE_HEAP
+	default y
+	help
+	  If is set to No, write to /proc/profile_heap over
+	  max number of records will be discarded.
+	  This option will enables wrapping to begining of records
+    	  and overrides old records.
+
+config SNSC_KINSPECT
+	bool "Kernel inspect tool"
+	depends on SNSC
+	depends on MARKERS
+	select NETPOLL
+	default n
+
+config SNSC_KINSPECT_SURVEY_INTERVAL
+	int "Interval time of survey (msec)"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+	default 1000
+
+config SNSC_KINSPECT_INFO_INTERVAL
+	int "Interval time of Information output (msec)"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+	default 10000
+
+config SNSC_KINSPECT_KEEPALIVE_INTERVAL
+	int "Interval time of keepalive (msec)"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+	default 60000
+
+config SNSC_KINSPECT_MAX_BUF
+	hex "buffer size for kernel thread"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+	default 0x8000
+
+config SNSC_KINSPECT_MAX_STORED_BUF
+	hex "buffer size without network output"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+	default 0x8000
+
+config SNSC_KINSPECT_DEBUG_MEASURE_MODE
+	bool "measuring usage time of kinspect"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+	default n
+
+config SNSC_KINSPECT_KBOOTCHART
+	tristate "Kernel Space Bootchart"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+
+config SNSC_KINSPECT_MEMINFO
+	tristate "Kinspect meminfo collector"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+
+config SNSC_KINSPECT_MEMINFO_BUDDYINFO
+	bool "Kinspect meminfo collector output buddyinfo"
+	depends on SNSC
+	depends on SNSC_KINSPECT_MEMINFO
+	default y
+
+config SNSC_KINSPECT_USERLAND_COLLECTOR_MODULE
+	tristate "Kinspect userland collector module"
+	depends on SNSC
+	depends on SNSC_KINSPECT
+
+config SNSC_FREE_MEM_MEASUREMENT
+       bool "Print out free memory before starting init process"
+       default n
+
+config SNSC_BOOT_TIME
+	bool  'Boot time analysis'
+	depends on SNSC
+
+choice
+	prompt "Boot time version"
+	depends on SNSC
+	depends on SNSC_BOOT_TIME
+	default SNSC_BOOT_TIME_VERSION_2
+
+config SNSC_BOOT_TIME_VERSION_1
+	bool "Boot time version 1"
+	depends on SNSC_BOOT_TIME
+	help
+		This version does not support the configurable max comment
+	  	length and the ringbuffer.
+
+config SNSC_BOOT_TIME_VERSION_2
+	bool "Boot time version 2"
+	depends on SNSC_BOOT_TIME
+	help
+		This version supports the configurable max comment length
+		and the ringbuffer.
+endchoice
+
+config SNSC_BOOT_TIME_MAX_COMMENT
+	int 'Max comment length for boot time'
+	depends on SNSC
+	depends on SNSC_BOOT_TIME
+	depends on SNSC_BOOT_TIME_VERSION_2
+	range 24 128
+  	default 24
+	help
+		The value of SNSC_BOOT_TIME_MAX_COMMENT should be
+		4bytes aligned.
+
+config SNSC_BOOT_TIME_RINGBUFFER
+	bool 'use the boot time ringbuffer mode'
+	depends on SNSC
+	depends on SNSC_BOOT_TIME
+	depends on SNSC_BOOT_TIME_VERSION_2
+	default n
+
+config SNSC_BOOT_TIME_USE_NBLARGS
+	bool 'Use NBLArgs for boot time save area'
+	depends on SNSC
+	depends on SNSC_NBLARGS
+	depends on SNSC_BOOT_TIME
+
+config SNSC_DEFAULT_BOOT_TIME_BASE
+	hex 'Default base addresss of boot time save area'
+	depends on SNSC
+	depends on SNSC_BOOT_TIME
+	default 0x80800000 if ARCH_MX3
+	default 0x10800000 if ARCH_OMAP
+	default 0x00800000 if ARCH_REALVIEW
+	default 0x80800000 if ARCH_NE1
+	default 0x40002000 if ARCH_EMXX
+
+config SNSC_DEFAULT_BOOT_TIME_SIZE
+	hex 'Default size of boot time save area'
+	depends on SNSC
+	depends on SNSC_BOOT_TIME
+	default 0x2000
+
+config SNSC_BOOT_TIME_IN_USEC
+	bool 'print boottime in usec'
+	depends on SNSC
+	depends on SNSC_BOOT_TIME
+	default n
+	help
+	  Say Y if you want to print boottime is usec format
+
+	  You can also pass "boottime_in_usec" as boot or module load
+	  parameter to overwrite this config.
+
+config SNSC_THREAD_RSS
+	bool 'Trace thread memory usage'
+	depends on SNSC
+	default n
+	help
+	  Say Y here to enable memory usage trace for each thread,
+	  including kernel threads and userspace threads.
+
+	  It adds every page allocation/free size to current running
+	  thread using "current" pointer. And it does as much as it can
+	  to find out whether this allocation/free is really made by
+	  current thread or by kernel itself(which is called excluded or
+	  unwanted).
+
+	  The results can be read out from a proc interface like:
+            $ cat /proc/thread_rss
+
+	  To clear the data:
+	    $ echo ANYTHING > /proc/thread_rss
+
+	  If unsure, say N.
+
+config SNSC_THREAD_RSS_HISTORY
+	bool 'Save maximum thread memory allocation history'
+	depends on SNSC_THREAD_RSS
+	default n
+
+config SNSC_PGSCAN
+       bool "page scan support"
+       depends on SNSC
+       default y if ARCH_CXD90014BASED
+
+config SNSC_SET_MIN_FREE_KB
+	bool 'Set minimum free memory in KBytes'
+	depends on SNSC
+	default n
+	help
+	  Say Y if you want to set minimum free memory in KBytes
+
+	  You can also pass "set_min_free_kb" as boot or module load
+	  parameter to overwrite this config
